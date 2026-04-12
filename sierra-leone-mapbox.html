@@ -212,20 +212,6 @@ var FREETOWN_POIS = [
   {name:'Cockerill Bay', lat:8.47,  lng:-13.26, water:true},
 ];
 
-// Sierra Leone border polygon
-var SL_BORDER = [
-  [-13.30,8.43],[-13.27,8.36],[-13.20,8.23],[-13.06,8.14],
-  [-12.96,7.90],[-12.85,7.82],[-12.61,7.64],[-12.49,7.46],
-  [-12.25,7.34],[-11.71,7.10],[-11.51,6.93],[-11.27,6.93],
-  [-11.04,6.96],[-10.76,7.04],[-10.60,7.24],[-10.57,7.39],
-  [-10.65,7.50],[-10.56,7.67],[-10.28,8.09],[-10.28,8.43],
-  [-10.36,8.58],[-10.47,8.68],[-10.68,8.87],[-10.71,9.06],
-  [-10.62,9.27],[-10.65,9.41],[-10.75,9.50],[-10.97,9.51],
-  [-11.17,9.64],[-11.37,9.73],[-11.64,10.00],[-11.91,10.01],
-  [-12.14,9.87],[-12.39,9.60],[-12.49,9.43],[-12.59,9.32],
-  [-12.73,9.07],[-12.80,8.98],[-13.01,8.85],[-13.13,8.78],
-  [-13.25,8.63],[-13.30,8.43]
-];
 
 // ═══════════════════════════════
 //  ATLAS STYLE OVERRIDES
@@ -306,26 +292,32 @@ mainMap.on('style.load', function() {
 });
 
 mainMap.on('load', function() {
-  // ── Sierra Leone fill ──
-  mainMap.addSource('sierra-leone', {
-    type:'geojson',
-    data:{type:'Feature', properties:{}, geometry:{type:'Polygon', coordinates:[SL_BORDER]}}
+  // ── Sierra Leone fill using official Mapbox country boundaries ──
+  mainMap.addSource('country-boundaries', {
+    type: 'vector',
+    url: 'mapbox://mapbox.country-boundaries-v1'
   });
 
-  // Find first remaining visible layer to insert below
-  var firstSymbol;
+  // Find admin layer to insert below
+  var adminLayer;
   mainMap.getStyle().layers.forEach(function(l) {
-    if (!firstSymbol && l.type === 'line' && /admin/.test(l.id)) firstSymbol = l.id;
+    if (!adminLayer && l.type === 'line' && /admin/.test(l.id)) adminLayer = l.id;
   });
 
   mainMap.addLayer({
-    id:'sl-fill', type:'fill', source:'sierra-leone',
-    paint:{'fill-color':'#a5ad88', 'fill-opacity':0.5}
-  }, firstSymbol);
+    id: 'sl-fill', type: 'fill',
+    source: 'country-boundaries',
+    'source-layer': 'country_boundaries',
+    filter: ['==', ['get', 'iso_3166_1_alpha_3'], 'SLE'],
+    paint: {'fill-color': '#a5ad88', 'fill-opacity': 0.45}
+  }, adminLayer);
 
   mainMap.addLayer({
-    id:'sl-border', type:'line', source:'sierra-leone',
-    paint:{'line-color':'rgba(60,55,45,0.5)', 'line-width':1.5}
+    id: 'sl-border', type: 'line',
+    source: 'country-boundaries',
+    'source-layer': 'country_boundaries',
+    filter: ['==', ['get', 'iso_3166_1_alpha_3'], 'SLE'],
+    paint: {'line-color': 'rgba(60,55,45,0.5)', 'line-width': 1.5}
   });
 
   // ── Add markers ──
