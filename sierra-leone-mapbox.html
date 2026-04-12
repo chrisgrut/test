@@ -329,10 +329,17 @@ function initGlobe() {
   globe.doubleClickZoom.disable();
 
   globe.on('load', function() {
+    // Set background to ocean color (removes white ring)
+    try { globe.setPaintProperty('background', 'background-color', '#b4c5d3'); } catch(e) {}
+
     // Hide all labels on globe too
     globe.getStyle().layers.forEach(function(layer) {
       if (layer.type === 'symbol') {
         globe.setLayoutProperty(layer.id, 'visibility', 'none');
+      }
+      // Also try to find any background layer
+      if (layer.type === 'background') {
+        try { globe.setPaintProperty(layer.id, 'background-color', '#b4c5d3'); } catch(e) {}
       }
     });
 
