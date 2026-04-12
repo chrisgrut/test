@@ -201,27 +201,13 @@ function applyAtlasStyle(map) {
       return;
     }
 
-    // Base land → sage green (but keep hillshade/terrain visible above)
-    if (id === 'land') {
-      try { map.setPaintProperty(id, 'background-color', '#c5c9a4'); } catch(e) {}
-    }
-
-    // Tint landcover olive but keep some transparency so terrain shows
-    if (/landcover/.test(id) && layer.type === 'fill') {
-      try { map.setPaintProperty(id, 'fill-color', '#b5bd98'); } catch(e) {}
-      try { map.setPaintProperty(id, 'fill-opacity', 0.5); } catch(e) {}
-    }
-
-    // Tint landuse subtly
-    if (/landuse|park|national/.test(id) && layer.type === 'fill') {
-      try { map.setPaintProperty(id, 'fill-color', '#a8b28c'); } catch(e) {}
-      try { map.setPaintProperty(id, 'fill-opacity', 0.4); } catch(e) {}
-    }
-
-    // Keep hillshade but tint it green
+    // Keep hillshade but tint it olive/green
     if (/hillshade/.test(id)) {
-      try { map.setPaintProperty(id, 'hillshade-shadow-color', '#6b7a5a'); } catch(e) {}
-      try { map.setPaintProperty(id, 'hillshade-highlight-color', '#d8ddc8'); } catch(e) {}
+      try {
+        map.setPaintProperty(id, 'hillshade-shadow-color', '#6b7a5a');
+        map.setPaintProperty(id, 'hillshade-highlight-color', '#dde2cc');
+        map.setPaintProperty(id, 'hillshade-accent-color', '#8a9670');
+      } catch(e) {}
     }
 
     // Water → soft blue
@@ -231,34 +217,25 @@ function applyAtlasStyle(map) {
       }
       if (layer.type === 'line') {
         try { map.setPaintProperty(id, 'line-color', '#8aafca'); } catch(e) {}
-        try { map.setPaintProperty(id, 'line-opacity', 0.9); } catch(e) {}
       }
     }
 
-    // Hide roads
+    // Hide roads, buildings, contours, POIs
     if (/road|bridge|tunnel|turning/.test(id) && layer.type === 'line') {
-      try { map.setPaintProperty(id, 'line-opacity', 0.05); } catch(e) {}
+      try { map.setPaintProperty(id, 'line-opacity', 0.04); } catch(e) {}
     }
-
-    // Hide buildings
-    if (/building/.test(id)) {
+    if (/building|contour|poi|aeroway/.test(id)) {
       map.setLayoutProperty(id, 'visibility', 'none');
     }
 
-    // Hide contour lines
-    if (/contour/.test(id)) {
-      map.setLayoutProperty(id, 'visibility', 'none');
-    }
-
-    // Admin-0 borders
+    // Admin-0 borders → visible dark
     if (/admin-0-boundary/.test(id) && layer.type === 'line') {
       try {
         map.setPaintProperty(id, 'line-color', 'rgba(60,55,45,0.45)');
         map.setPaintProperty(id, 'line-width', 1.2);
       } catch(e) {}
     }
-
-    // Admin-1 borders
+    // Admin-1 borders → subtle
     if (/admin-1-boundary/.test(id) && layer.type === 'line') {
       try {
         map.setPaintProperty(id, 'line-color', 'rgba(60,55,45,0.12)');
@@ -292,19 +269,26 @@ mainMap.on('load', function() {
     url: 'mapbox://mapbox.country-boundaries-v1'
   });
 
-  var adminLayer;
-  mainMap.getStyle().layers.forEach(function(l) {
-    if (!adminLayer && l.type === 'line' && /admin/.test(l.id)) adminLayer = l.id;
+  // ── Wash out ALL countries EXCEPT Sierra Leone ──
+  // This makes SL stand out with full terrain detail
+  mainMap.addLayer({
+    id: 'neighbors-wash', type: 'fill',
+    source: 'country-boundaries',
+    'source-layer': 'country_boundaries',
+    filter: ['!=', ['get', 'iso_3166_1_alpha_3'], 'SLE'],
+    paint: {'fill-color': '#e0ddd4', 'fill-opacity': 0.45}
   });
 
+  // ── Subtle green tint on Sierra Leone ──
   mainMap.addLayer({
     id: 'sl-fill', type: 'fill',
     source: 'country-boundaries',
     'source-layer': 'country_boundaries',
     filter: ['==', ['get', 'iso_3166_1_alpha_3'], 'SLE'],
-    paint: {'fill-color': '#a5ad88', 'fill-opacity': 0.3}
-  }, adminLayer);
+    paint: {'fill-color': '#8a9e6e', 'fill-opacity': 0.15}
+  });
 
+  // ── Sierra Leone border ──
   mainMap.addLayer({
     id: 'sl-border', type: 'line',
     source: 'country-boundaries',
