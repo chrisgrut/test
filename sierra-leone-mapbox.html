@@ -315,8 +315,8 @@ function initGlobe() {
   globe = new mapboxgl.Map({
     container: 'globe-map',
     style: 'mapbox://styles/smartiveag/cmnw3x377005a01s6aswga8oo',
-    center: [-11.78, 8.46],
-    zoom: 2.3,
+    center: [-2, 8],
+    zoom: 1.5,
     interactive: true,
     attributionControl: false,
   });
@@ -347,8 +347,8 @@ function initGlobe() {
     // Delay resize + recenter to ensure container is properly laid out
     setTimeout(function() {
       globe.resize();
-      globe.setCenter([-11.78, 8.46]);
-      globe.setZoom(2.3);
+      globe.setCenter([-2, 8]);
+      globe.setZoom(1.5);
       syncGlobe();
     }, 300);
   });
