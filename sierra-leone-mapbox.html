@@ -195,36 +195,58 @@ function applyAtlasStyle(map) {
   map.getStyle().layers.forEach(function(layer) {
     var id = layer.id;
 
-    // Hide ALL text/symbol layers
+    // Hide ALL text/symbol layers (we use our own)
     if (layer.type === 'symbol') {
       map.setLayoutProperty(id, 'visibility', 'none');
       return;
     }
 
-    // Land → olive/sage
-    if (layer.type === 'fill' && /land|landcover|landuse|park|national/.test(id)) {
-      try { map.setPaintProperty(id, 'fill-color', '#c5c9a4'); } catch(e) {}
-      try { map.setPaintProperty(id, 'fill-opacity', 1); } catch(e) {}
+    // Base land → sage green (but keep hillshade/terrain visible above)
+    if (id === 'land') {
+      try { map.setPaintProperty(id, 'background-color', '#c5c9a4'); } catch(e) {}
+    }
+
+    // Tint landcover olive but keep some transparency so terrain shows
+    if (/landcover/.test(id) && layer.type === 'fill') {
+      try { map.setPaintProperty(id, 'fill-color', '#b5bd98'); } catch(e) {}
+      try { map.setPaintProperty(id, 'fill-opacity', 0.5); } catch(e) {}
+    }
+
+    // Tint landuse subtly
+    if (/landuse|park|national/.test(id) && layer.type === 'fill') {
+      try { map.setPaintProperty(id, 'fill-color', '#a8b28c'); } catch(e) {}
+      try { map.setPaintProperty(id, 'fill-opacity', 0.4); } catch(e) {}
+    }
+
+    // Keep hillshade but tint it green
+    if (/hillshade/.test(id)) {
+      try { map.setPaintProperty(id, 'hillshade-shadow-color', '#6b7a5a'); } catch(e) {}
+      try { map.setPaintProperty(id, 'hillshade-highlight-color', '#d8ddc8'); } catch(e) {}
     }
 
     // Water → soft blue
     if (/water/.test(id)) {
       if (layer.type === 'fill') {
-        try { map.setPaintProperty(id, 'fill-color', '#b8cedf'); } catch(e) {}
+        try { map.setPaintProperty(id, 'fill-color', '#b4ccdd'); } catch(e) {}
       }
       if (layer.type === 'line') {
-        try { map.setPaintProperty(id, 'line-color', '#8fb5d0'); } catch(e) {}
-        try { map.setPaintProperty(id, 'line-opacity', 0.8); } catch(e) {}
+        try { map.setPaintProperty(id, 'line-color', '#8aafca'); } catch(e) {}
+        try { map.setPaintProperty(id, 'line-opacity', 0.9); } catch(e) {}
       }
     }
 
     // Hide roads
     if (/road|bridge|tunnel|turning/.test(id) && layer.type === 'line') {
-      try { map.setPaintProperty(id, 'line-opacity', 0.06); } catch(e) {}
+      try { map.setPaintProperty(id, 'line-opacity', 0.05); } catch(e) {}
     }
 
     // Hide buildings
     if (/building/.test(id)) {
+      map.setLayoutProperty(id, 'visibility', 'none');
+    }
+
+    // Hide contour lines
+    if (/contour/.test(id)) {
       map.setLayoutProperty(id, 'visibility', 'none');
     }
 
@@ -251,7 +273,7 @@ function applyAtlasStyle(map) {
 // ═══════════════════════════════
 var mainMap = new mapboxgl.Map({
   container: 'main-map',
-  style: 'mapbox://styles/mapbox/light-v11',
+  style: 'mapbox://styles/mapbox/outdoors-v12',
   center: [-11.78, 8.46],
   zoom: 7.0,
   minZoom: 5,
@@ -280,7 +302,7 @@ mainMap.on('load', function() {
     source: 'country-boundaries',
     'source-layer': 'country_boundaries',
     filter: ['==', ['get', 'iso_3166_1_alpha_3'], 'SLE'],
-    paint: {'fill-color': '#a5ad88', 'fill-opacity': 0.45}
+    paint: {'fill-color': '#a5ad88', 'fill-opacity': 0.3}
   }, adminLayer);
 
   mainMap.addLayer({
