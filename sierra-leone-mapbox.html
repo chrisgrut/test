@@ -345,17 +345,14 @@ function initGlobe() {
   globe.scrollZoom.disable();
   globe.doubleClickZoom.disable();
 
-  globe.on('style.load', function() {
-    globe.setFog({
-      color: '#d8e4ee',
-      'high-color': '#b0c8de',
-      'horizon-blend': 0.06,
-      'space-color': '#f0f4f8',
-      'star-intensity': 0.0,
-    });
-  });
-
   globe.on('load', function() {
+    // Hide all labels on globe too
+    globe.getStyle().layers.forEach(function(layer) {
+      if (layer.type === 'symbol') {
+        globe.setLayoutProperty(layer.id, 'visibility', 'none');
+      }
+    });
+
     globe.addSource('viewport-box', {type:'geojson', data:boundsGeoJSON()});
     globe.addLayer({
       id:'vp-line', type:'line', source:'viewport-box',
