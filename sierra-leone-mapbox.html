@@ -20,9 +20,9 @@
 
   * { margin:0; padding:0; box-sizing:border-box; }
 
-  body {
+  html, body {
+    height:100%; overflow:hidden;
     font-family:'IBM Plex Sans',sans-serif;
-    height:100vh; overflow:hidden;
     background: linear-gradient(135deg, #e8eef4 0%, #f2f0eb 40%, #dce6ed 100%);
     display:flex; align-items:center; justify-content:center;
   }
@@ -30,15 +30,13 @@
   /* ── Layout wrapper ── */
   .layout-wrap {
     position:relative;
-    /* Extra padding so globe can overflow without body clipping */
-    padding-bottom: min(8vh, 8vw);
-    padding-right: min(8vh, 8vw);
+    width: min(78vh, 78vw);
+    height: min(78vh, 78vw);
   }
 
   /* ── Main circle ── */
   .circle-main {
-    width: min(82vh, 82vw);
-    height: min(82vh, 82vw);
+    width:100%; height:100%;
     border-radius:50%;
     overflow:hidden;
     border:4px solid rgba(255,255,255,0.85);
@@ -46,20 +44,17 @@
   }
   #main-map { width:100%; height:100%; }
 
-  /* ── Globe circle ── */
+  /* ── Globe circle (overlaps outside main circle) ── */
   .circle-globe {
-    position:absolute;
-    width: min(22vh, 22vw);
-    height: min(22vh, 22vw);
-    min-width:130px; min-height:130px;
+    position:fixed;
+    width: min(20vh, 20vw);
+    height: min(20vh, 20vw);
+    min-width:140px; min-height:140px;
     border-radius:50%;
     overflow:hidden;
     border:3px solid rgba(255,255,255,0.9);
     box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
     z-index:200;
-    /* Overlapping bottom-right of main circle */
-    bottom: 5%;
-    right: 5%;
     transition: transform 0.25s cubic-bezier(.22,.68,0,1.2);
   }
   .circle-globe:hover { transform:scale(1.05); }
@@ -328,7 +323,27 @@ mainMap.on('load', function() {
     .setLngLat([-13.6, 7.35]).addTo(mainMap);
 
   initGlobe();
+  positionGlobe();
+  window.addEventListener('resize', positionGlobe);
 });
+
+// Position globe at bottom-right edge of the main circle
+function positionGlobe() {
+  var main = document.querySelector('.circle-main');
+  var globeEl = document.querySelector('.circle-globe');
+  var r = main.getBoundingClientRect();
+  var gr = globeEl.getBoundingClientRect();
+  // Center of main circle
+  var cx = r.left + r.width / 2;
+  var cy = r.top + r.height / 2;
+  var radius = r.width / 2;
+  // Place globe center at 315 degrees (bottom-right) on the circle edge
+  var angle = 135 * Math.PI / 180; // 135° from top = bottom-right
+  var gx = cx + radius * Math.cos(angle) - gr.width / 2;
+  var gy = cy + radius * Math.sin(angle) - gr.height / 2;
+  globeEl.style.left = gx + 'px';
+  globeEl.style.top = gy + 'px';
+}
 
 function addCityMarkers(cities, map) {
   cities.forEach(function(city) {
