@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sierra Leone</title>
+
+<!-- Mapbox GL JS -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap');
+
+  :root {
+    --text: #2c2924;
+    --text-mid: #5a564e;
+    --text-light: #7e7a72;
+    --cap: #b43020;
+    --ocean-text: #6888a0;
+    --sl-label: #4a5c3c;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'IBM Plex Sans',sans-serif; height:100vh; overflow:hidden; }
+  #app { display:flex; flex-direction:column; height:100vh; }
+
+  .map-wrap { flex:1; position:relative; overflow:hidden; }
+  #main-map { width:100%; height:100%; }
+
+  /* ── Globe inset ── */
+  .globe-wrap {
+    position:absolute; bottom:20px; right:20px;
+    width:180px; height:180px;
+    border-radius:50%; overflow:hidden;
+    border:2px solid rgba(0,0,0,0.12);
+    box-shadow: 0 3px 14px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.12);
+    z-index:100;
+    transition: transform 0.25s cubic-bezier(.22,.68,0,1.2);
+  }
+  .globe-wrap:hover { transform:scale(1.05); }
+  #globe-map { width:100%; height:100%; }
+
+  /* ── Freetown inset ── */
+  .inset-wrap {
+    position:absolute; bottom:20px; left:20px;
+    width:200px; height:160px;
+    border:1.5px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    z-index:100; overflow:hidden;
+  }
+  #inset-map { width:100%; height:100%; }
+
+  /* ── Info card ── */
+  .info-card {
+    position:absolute; top:14px; left:14px;
+    background:rgba(255,255,252,0.92);
+    backdrop-filter:blur(12px);
+    border-radius:8px; padding:14px 18px;
+    z-index:100;
+    border:1px solid rgba(0,0,0,0.08);
+    max-width:210px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .info-card h2 {
+    font-family:'Libre Baskerville',serif;
+    font-size:15px; font-weight:700;
+    color:var(--text); margin-bottom:6px;
+  }
+  .info-card .div { height:1px; background:rgba(0,0,0,0.08); margin-bottom:6px; }
+  .info-card .r { font-size:11px; color:var(--text-mid); line-height:1.7; }
+  .info-card .r b { color:var(--text); font-weight:500; }
+
+  .hint {
+    position:absolute; top:10px; right:10px;
+    font-size:10px; color:rgba(0,0,0,0.3);
+    z-index:100; background:rgba(255,255,255,0.5);
+    padding:3px 7px; border-radius:3px;
+  }
+
+  /* ── City markers ── */
+  .pin { display:flex; align-items:center; gap:4px; pointer-events:none; }
+  .pin .d {
+    width:6px; height:6px; border-radius:50%;
+    background:#2c2924; flex-shrink:0;
+  }
+  .pin .n {
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:10.5px; font-weight:500;
+    color:var(--text-mid); white-space:nowrap;
+    text-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.7);
+  }
+
+  /* Capital marker */
+  .cap-marker {
+    width:12px; height:12px; position:relative;
+    pointer-events:none;
+  }
+  .cap-marker::before {
+    content:''; position:absolute; inset:0;
+    border:1.5px solid var(--cap);
+    border-radius:50%;
+  }
+  .cap-marker::after {
+    content:''; position:absolute;
+    top:50%; left:50%;
+    width:4px; height:4px;
+    background:var(--cap);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .cap-pin { display:flex; align-items:center; gap:5px; pointer-events:none; }
+  .cap-pin .n {
+    font-family:'Libre Baskerville',serif;
+    font-size:12px; font-weight:700;
+    color:var(--text); white-space:nowrap;
+    letter-spacing:0.5px;
+    text-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.7);
+  }
+
+  /* Inset labels */
+  .inset-label {
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:9px; font-weight:500;
+    color:var(--text); white-space:nowrap;
+    text-shadow: 0 0 3px rgba(255,255,255,0.8);
+    pointer-events:none;
+  }
+  .inset-cap-label {
+    font-family:'Libre Baskerville',serif;
+    font-size:10px; font-weight:700;
+    color:var(--text); white-space:nowrap;
+    letter-spacing:1px;
+    text-shadow: 0 0 4px rgba(255,255,255,0.9);
+    pointer-events:none;
+  }
+
+  /* Mapbox control overrides */
+  .mapboxgl-ctrl-attrib { font-size:9px !important; opacity:0.6; }
+  .mapboxgl-ctrl-group {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
+    border:none !important;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="map-wrap">
+    <div id="main-map"></div>
+
+    <div class="info-card">
+      <h2>Republic of Sierra Leone</h2>
+      <div class="div"></div>
+      <div class="r">Capital <b>Freetown</b></div>
+      <div class="r">Population <b>~8.6 Mio.</b></div>
+      <div class="r">Area <b>71 740 km²</b></div>
+      <div class="r">Languages <b>English, Krio, Mende, Temne</b></div>
+    </div>
+
+    <div class="inset-wrap">
+      <div id="inset-map"></div>
+    </div>
+
+    <div class="globe-wrap" id="globe-wrap">
+      <div id="globe-map"></div>
+    </div>
+
+    <div class="hint">Scroll zoom · Drag pan · Drag globe</div>
+  </div>
+</div>
+
+<script>
+/* ╔══════════════════════════════════════════════════╗
+   ║  KONFIGURATION — hier anpassen                  ║
+   ╠══════════════════════════════════════════════════╣
+   ║                                                  ║
+   ║  1. Token: https://account.mapbox.com            ║
+   ║     → Create token → kopieren                    ║
+   ║                                                  ║
+   ║  2. Style: https://studio.mapbox.com             ║
+   ║     → New Style → "Outdoors" als Basis           ║
+   ║     → Farben, Hillshade, Labels anpassen         ║
+   ║     → Publish → Style URL kopieren               ║
+   ║     → Format: mapbox://styles/username/abc123    ║
+   ║                                                  ║
+   ╚══════════════════════════════════════════════════╝ */
+
+// Set your Mapbox token here or pass as URL parameter: ?token=YOUR_TOKEN
+mapboxgl.accessToken = new URLSearchParams(window.location.search).get('token') || 'YOUR_MAPBOX_TOKEN';
+
+var CONFIG = {
+  // Dein Custom Style aus Mapbox Studio:
+  mainStyle:  'mapbox://styles/mapbox/outdoors-v12',
+  // Für den Globus — Satellite sieht am besten aus:
+  globeStyle: 'mapbox://styles/mapbox/satellite-v9',
+  // Für das Freetown-Inset — gleicher Style wie Hauptkarte:
+  insetStyle: 'mapbox://styles/mapbox/outdoors-v12',
+
+  // Kartenausschnitt
+  center: [-11.78, 8.46],
+  zoom: 7.3,
+};
+
+/* ══════════════════════════════════════════════════
+   Ab hier musst du normalerweise nichts ändern.
+   ══════════════════════════════════════════════════ */
+
+// ── Städte ──
+var CITIES = [
+  {name:'Freetown',    lat:8.4844, lng:-13.2317, cap:true},
+  {name:'Bo',          lat:7.9647, lng:-11.7383},
+  {name:'Kenema',      lat:7.8769, lng:-11.1872},
+  {name:'Makeni',      lat:8.8833, lng:-12.0444},
+  {name:'Koidu',       lat:8.6439, lng:-10.85},
+  {name:'Port Loko',   lat:8.7667, lng:-12.7872},
+  {name:'Kabala',      lat:9.5833, lng:-11.55},
+  {name:'Bonthe',      lat:7.5264, lng:-12.505},
+  {name:'Moyamba',     lat:8.1592, lng:-12.4314},
+  {name:'Kailahun',    lat:8.2772, lng:-10.5736},
+  {name:'Magburaka',   lat:8.7167, lng:-11.95},
+  {name:'Lunsar',      lat:8.6833, lng:-12.5333},
+  {name:'Pendembu',    lat:8.0972, lng:-10.6917},
+  {name:'Waterloo',    lat:8.3381, lng:-13.07},
+  {name:'Tongo Fields',lat:8.35,   lng:-11.25},
+];
+
+var FREETOWN_POIS = [
+  {name:'Cline Town',  lat:8.47,  lng:-13.19},
+  {name:'Kissy',       lat:8.455, lng:-13.165},
+  {name:'Wellington',  lat:8.41,  lng:-13.13},
+];
+
+// ═══════════════════════════════
+//  HAUPTKARTE
+// ═══════════════════════════════
+var mainMap = new mapboxgl.Map({
+  container: 'main-map',
+  style: CONFIG.mainStyle,
+  center: CONFIG.center,
+  zoom: CONFIG.zoom,
+  minZoom: 5,
+  maxZoom: 14,
+  attributionControl: true,
+});
+
+mainMap.addControl(new mapboxgl.NavigationControl({showCompass:false}), 'top-right');
+
+mainMap.on('load', function() {
+  // Städte als Marker
+  CITIES.forEach(function(city) {
+    var el = document.createElement('div');
+    if (city.cap) {
+      el.className = 'cap-pin';
+      el.innerHTML = '<div class="cap-marker"></div><span class="n">' + city.name + '</span>';
+    } else {
+      el.className = 'pin';
+      el.innerHTML = '<span class="d"></span><span class="n">' + city.name + '</span>';
+    }
+
+    new mapboxgl.Marker({element:el, anchor:'left', offset:[4,0]})
+      .setLngLat([city.lng, city.lat])
+      .addTo(mainMap);
+  });
+
+  // Sierra Leone Grenze hervorheben (optional, via GeoJSON)
+  // Du kannst in Mapbox Studio auch einen "admin-0" Layer
+  // mit Data-Driven Styling für Sierra Leone einfärben.
+
+  initGlobe();
+  initInset();
+});
+
+// Sync globe viewport on move
+mainMap.on('move', syncGlobe);
+
+// ═══════════════════════════════
+//  GLOBUS (Mapbox Globe Projection)
+// ═══════════════════════════════
+var globe;
+
+function initGlobe() {
+  globe = new mapboxgl.Map({
+    container: 'globe-map',
+    style: CONFIG.globeStyle,
+    center: [-11.78, 8.46],
+    zoom: 1.8,
+    projection: 'globe',
+    interactive: true,
+    attributionControl: false,
+  });
+
+  // Nur Rotation erlauben, kein Zoom
+  globe.scrollZoom.disable();
+  globe.doubleClickZoom.disable();
+
+  globe.on('style.load', function() {
+    globe.setFog({
+      color: '#15202b',
+      'high-color': '#15202b',
+      'horizon-blend': 0.04,
+      'space-color': '#0a0a0a',
+      'star-intensity': 0.35,
+    });
+  });
+
+  globe.on('load', function() {
+    // Viewport-Rechteck als GeoJSON-Layer
+    globe.addSource('viewport-box', {
+      type: 'geojson',
+      data: boundsGeoJSON(),
+    });
+    globe.addLayer({
+      id: 'vp-fill', type: 'fill',
+      source: 'viewport-box',
+      paint: {'fill-color':'#e8c94a', 'fill-opacity':0.2},
+    });
+    globe.addLayer({
+      id: 'vp-line', type: 'line',
+      source: 'viewport-box',
+      paint: {'line-color':'#c04030', 'line-width':2, 'line-opacity':0.8},
+    });
+    syncGlobe();
+  });
+
+  // Mapbox-Controls im Globus ausblenden
+  hideGlobeControls();
+}
+
+function boundsGeoJSON() {
+  var b = mainMap.getBounds();
+  return {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [b.getWest(), b.getSouth()],
+        [b.getEast(), b.getSouth()],
+        [b.getEast(), b.getNorth()],
+        [b.getWest(), b.getNorth()],
+        [b.getWest(), b.getSouth()],
+      ]],
+    },
+  };
+}
+
+function syncGlobe() {
+  if (!globe || !globe.getSource('viewport-box')) return;
+  globe.getSource('viewport-box').setData(boundsGeoJSON());
+}
+
+function hideGlobeControls() {
+  var obs = new MutationObserver(function() {
+    var els = document.querySelectorAll(
+      '#globe-wrap .mapboxgl-ctrl-bottom-left,' +
+      '#globe-wrap .mapboxgl-ctrl-bottom-right'
+    );
+    els.forEach(function(el) { el.style.display = 'none'; });
+  });
+  obs.observe(document.getElementById('globe-wrap'), {childList:true, subtree:true});
+}
+
+// ═══════════════════════════════
+//  FREETOWN INSET
+// ═══════════════════════════════
+var insetMap;
+
+function initInset() {
+  insetMap = new mapboxgl.Map({
+    container: 'inset-map',
+    style: CONFIG.insetStyle,
+    center: [-13.2, 8.45],
+    zoom: 12,
+    interactive: false,
+    attributionControl: false,
+  });
+
+  insetMap.on('load', function() {
+    // Freetown Marker
+    var ftEl = document.createElement('div');
+    ftEl.className = 'cap-pin';
+    ftEl.innerHTML = '<div class="cap-marker"></div><span class="inset-cap-label">FREETOWN</span>';
+    new mapboxgl.Marker({element:ftEl, anchor:'left', offset:[4,0]})
+      .setLngLat([-13.2317, 8.4844])
+      .addTo(insetMap);
+
+    // Weitere Orte
+    FREETOWN_POIS.forEach(function(poi) {
+      var el = document.createElement('div');
+      el.className = 'pin';
+      el.innerHTML = '<span class="d"></span><span class="inset-label">' + poi.name + '</span>';
+      new mapboxgl.Marker({element:el, anchor:'left', offset:[3,0]})
+        .setLngLat([poi.lng, poi.lat])
+        .addTo(insetMap);
+    });
+  });
+}
+</script>
+</body>
+</html>
