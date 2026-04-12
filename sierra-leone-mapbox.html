@@ -189,58 +189,15 @@ var ROTATED_LABELS = [
 ];
 
 // ═══════════════════════════════
-//  ATLAS STYLE OVERRIDES
+//  STYLE OVERRIDES (minimal — custom style handles colors)
 // ═══════════════════════════════
 function applyAtlasStyle(map) {
   map.getStyle().layers.forEach(function(layer) {
     var id = layer.id;
 
-    // Hide ALL text/symbol layers (we use our own)
+    // Hide built-in text/symbol layers (we add our own markers/labels)
     if (layer.type === 'symbol') {
       map.setLayoutProperty(id, 'visibility', 'none');
-      return;
-    }
-
-    // Keep hillshade but tint it olive/green
-    if (/hillshade/.test(id)) {
-      try {
-        map.setPaintProperty(id, 'hillshade-shadow-color', '#6b7a5a');
-        map.setPaintProperty(id, 'hillshade-highlight-color', '#dde2cc');
-        map.setPaintProperty(id, 'hillshade-accent-color', '#8a9670');
-      } catch(e) {}
-    }
-
-    // Water → soft blue
-    if (/water/.test(id)) {
-      if (layer.type === 'fill') {
-        try { map.setPaintProperty(id, 'fill-color', '#b4ccdd'); } catch(e) {}
-      }
-      if (layer.type === 'line') {
-        try { map.setPaintProperty(id, 'line-color', '#8aafca'); } catch(e) {}
-      }
-    }
-
-    // Hide roads, buildings, contours, POIs
-    if (/road|bridge|tunnel|turning/.test(id) && layer.type === 'line') {
-      try { map.setPaintProperty(id, 'line-opacity', 0.04); } catch(e) {}
-    }
-    if (/building|contour|poi|aeroway/.test(id)) {
-      map.setLayoutProperty(id, 'visibility', 'none');
-    }
-
-    // Admin-0 borders → visible dark
-    if (/admin-0-boundary/.test(id) && layer.type === 'line') {
-      try {
-        map.setPaintProperty(id, 'line-color', 'rgba(60,55,45,0.45)');
-        map.setPaintProperty(id, 'line-width', 1.2);
-      } catch(e) {}
-    }
-    // Admin-1 borders → subtle
-    if (/admin-1-boundary/.test(id) && layer.type === 'line') {
-      try {
-        map.setPaintProperty(id, 'line-color', 'rgba(60,55,45,0.12)');
-        map.setPaintProperty(id, 'line-width', 0.5);
-      } catch(e) {}
     }
   });
 }
@@ -250,7 +207,7 @@ function applyAtlasStyle(map) {
 // ═══════════════════════════════
 var mainMap = new mapboxgl.Map({
   container: 'main-map',
-  style: 'mapbox://styles/mapbox/outdoors-v12',
+  style: 'mapbox://styles/smartiveag/cmnw3x377005a01s6aswga8oo',
   center: [-11.78, 8.46],
   zoom: 7.0,
   minZoom: 5,
