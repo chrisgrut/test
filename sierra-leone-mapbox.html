@@ -27,9 +27,13 @@
     display:flex; align-items:center; justify-content:center;
   }
 
+  /* ── Layout wrapper ── */
+  .layout-wrap {
+    position:relative;
+  }
+
   /* ── Main circle ── */
   .circle-main {
-    position:relative;
     width: min(82vh, 82vw);
     height: min(82vh, 82vw);
     border-radius:50%;
@@ -42,20 +46,21 @@
   /* ── Globe circle ── */
   .circle-globe {
     position:absolute;
-    width: min(20vh, 20vw);
-    height: min(20vh, 20vw);
-    min-width:120px; min-height:120px;
+    width: min(22vh, 22vw);
+    height: min(22vh, 22vw);
+    min-width:130px; min-height:130px;
     border-radius:50%;
     overflow:hidden;
     border:3px solid rgba(255,255,255,0.9);
     box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
     z-index:200;
-    /* Position: overlapping bottom-right of main circle */
-    bottom: 2%;
-    right: 2%;
+    /* Overlapping bottom-right of main circle */
+    bottom: 0;
+    right: 0;
+    transform: translate(15%, 15%);
     transition: transform 0.25s cubic-bezier(.22,.68,0,1.2);
   }
-  .circle-globe:hover { transform:scale(1.05); }
+  .circle-globe:hover { transform:translate(15%, 15%) scale(1.05); }
   #globe-map { width:100%; height:100%; }
 
   /* ── City markers ── */
@@ -133,8 +138,10 @@
 </head>
 <body>
 
-<div class="circle-main">
-  <div id="main-map"></div>
+<div class="layout-wrap">
+  <div class="circle-main">
+    <div id="main-map"></div>
+  </div>
   <div class="circle-globe" id="globe-wrap">
     <div id="globe-map"></div>
   </div>
