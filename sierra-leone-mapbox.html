@@ -325,11 +325,6 @@ function initGlobe() {
   globe.doubleClickZoom.disable();
 
   globe.on('load', function() {
-    // Fix container size, then re-center
-    globe.resize();
-    globe.setCenter([-11.78, 8.46]);
-    globe.setZoom(2.3);
-
     // Hide all labels on globe too
     globe.getStyle().layers.forEach(function(layer) {
       if (layer.type === 'symbol') {
@@ -348,6 +343,14 @@ function initGlobe() {
     document.querySelectorAll(
       '#globe-wrap .mapboxgl-ctrl-bottom-left,#globe-wrap .mapboxgl-ctrl-bottom-right'
     ).forEach(function(el) { el.style.display='none'; });
+
+    // Delay resize + recenter to ensure container is properly laid out
+    setTimeout(function() {
+      globe.resize();
+      globe.setCenter([-11.78, 8.46]);
+      globe.setZoom(2.3);
+      syncGlobe();
+    }, 300);
   });
 
   var obs = new MutationObserver(function() {
