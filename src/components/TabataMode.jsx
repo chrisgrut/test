@@ -14,7 +14,7 @@ const EXERCISES = [
 
 const WORK = 20
 const REST = 10
-const DEFAULT_VIDEO = 'https://www.youtube.com/embed/XIMLoLxmTDw'
+const DEFAULT_VIDEO = 'https://www.youtube.com/embed/fX1qJHfEkJ4'
 
 function parseYouTubeId(input) {
   if (!input) return null
