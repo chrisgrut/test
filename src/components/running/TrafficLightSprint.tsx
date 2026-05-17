@@ -72,7 +72,7 @@ export function TrafficLightSprint() {
     <div className={cn('flex min-h-[80vh] flex-col gap-3 p-3 transition-colors duration-150', bg)}>
       <div className={cn('flex flex-1 flex-col items-center justify-center text-center', text)}>
         <span className="text-3xl font-black uppercase tracking-tight sm:text-4xl">Kommando</span>
-        <span className="text-[7rem] font-black leading-none tracking-tight sm:text-[12rem]">
+        <span className="text-[5.5rem] font-black leading-none tracking-tight sm:text-[12rem]">
           {label}
         </span>
         {!color ? (
