@@ -158,7 +158,22 @@ const ICONS = {
   jack: JumpingJack,
 }
 
-export default function ExerciseIcon({ id, stroke = 'currentColor', className = '' }) {
+export default function ExerciseIcon({
+  id,
+  stroke = 'currentColor',
+  className = '',
+  photo = null,
+}) {
+  if (photo) {
+    return (
+      <span
+        className={'inline-block overflow-hidden rounded-xl bg-black ' + className}
+        aria-hidden="true"
+      >
+        <img src={photo} alt="" className="w-full h-full object-cover" />
+      </span>
+    )
+  }
   const Cmp = ICONS[id]
   if (!Cmp) return null
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBeep } from '../hooks/useBeep.js'
+import { useExerciseImages } from '../hooks/useExerciseImages.js'
 import ExerciseIcon from './ExerciseIcon.jsx'
 
 const EXERCISES = [
@@ -41,8 +42,10 @@ export default function TabataMode() {
   const [phase, setPhase] = useState('work') // 'work' | 'rest'
   const [secondsLeft, setSecondsLeft] = useState(WORK)
   const [exerciseIndex, setExerciseIndex] = useState(0)
+  const [editMode, setEditMode] = useState(false)
   const intervalRef = useRef(null)
   const beep = useBeep()
+  const { images, setImage, removeImage } = useExerciseImages()
 
   useEffect(() => {
     if (!running) {
@@ -157,6 +160,7 @@ export default function TabataMode() {
         <div className="rounded-2xl bg-black border-2 border-neon p-4 flex gap-4 items-center">
           <ExerciseIcon
             id={currentExercise.id}
+            photo={images[currentExercise.id]}
             stroke="#D7FF1E"
             className="w-24 h-24 sm:w-28 sm:h-28 shrink-0"
           />
@@ -174,6 +178,7 @@ export default function TabataMode() {
           <div className="flex gap-4 items-center">
             <ExerciseIcon
               id={nextExercise.id}
+              photo={images[nextExercise.id]}
               stroke="#fb923c"
               className="w-36 h-36 sm:w-44 sm:h-44 shrink-0"
             />
@@ -208,21 +213,39 @@ export default function TabataMode() {
           Reset
         </button>
 
+        {/* Bilder-Edit Toggle */}
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <span className="text-xl font-black uppercase text-neutral-400">Übungen</span>
+          <button
+            onClick={() => setEditMode((e) => !e)}
+            className={
+              'px-4 py-2 rounded-xl text-base font-black uppercase ' +
+              (editMode
+                ? 'bg-neon text-black'
+                : 'bg-neutral-900 text-white border-2 border-neutral-700')
+            }
+          >
+            {editMode ? 'Fertig' : 'Bilder bearbeiten'}
+          </button>
+        </div>
+
         {/* Übungsliste */}
-        <ol className="grid grid-cols-1 gap-2 mt-2">
+        <ol className="grid grid-cols-1 gap-2">
           {EXERCISES.map((ex, i) => {
             const isCurrent = i === exerciseIndex
+            const photo = images[ex.id]
             return (
               <li
                 key={ex.id}
                 onClick={() => {
+                  if (editMode) return
                   setExerciseIndex(i)
                   setPhase('work')
                   setSecondsLeft(WORK)
                 }}
                 className={
                   'px-3 py-2 rounded-xl text-lg font-black flex items-center gap-3 ' +
-                  (isCurrent
+                  (isCurrent && !editMode
                     ? 'bg-neon text-black'
                     : 'bg-neutral-900 text-white border border-neutral-800')
                 }
@@ -232,14 +255,53 @@ export default function TabataMode() {
                 </span>
                 <ExerciseIcon
                   id={ex.id}
-                  stroke={isCurrent ? '#000' : '#D7FF1E'}
+                  photo={photo}
+                  stroke={isCurrent && !editMode ? '#000' : '#D7FF1E'}
                   className="w-12 h-12 shrink-0"
                 />
                 <span className="flex-1">{ex.name}</span>
+                {editMode && (
+                  <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <label className="px-3 py-2 rounded-lg bg-neon text-black text-sm font-black uppercase cursor-pointer">
+                      {photo ? 'Ändern' : 'Foto'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0]
+                          if (f) {
+                            try {
+                              await setImage(ex.id, f)
+                            } catch {
+                              alert('Bild konnte nicht geladen werden.')
+                            }
+                          }
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                    {photo && (
+                      <button
+                        onClick={() => removeImage(ex.id)}
+                        className="px-3 py-2 rounded-lg bg-red-600 text-white text-sm font-black uppercase"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             )
           })}
         </ol>
+        {editMode && (
+          <p className="text-sm text-neutral-400 font-black leading-snug">
+            Tippe „Foto", um pro Übung ein eigenes Bild aus Galerie oder Kamera zu wählen.
+            Bilder werden lokal auf diesem Gerät gespeichert und funktionieren danach offline.
+          </p>
+        )}
       </section>
     </div>
   )
