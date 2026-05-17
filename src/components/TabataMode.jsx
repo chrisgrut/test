@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBeep } from '../hooks/useBeep.js'
+import ExerciseIcon from './ExerciseIcon.jsx'
 
 const EXERCISES = [
-  'Armkreisen',
-  'Abwehr-Sidesteps',
-  'Sprungwurf-Kniebeugen',
-  'Plank mit Schultertippen',
-  'Tappings (Heiße Kohlen)',
-  'Ausfallschritt mit Drehung',
-  'Block-Sprünge',
-  'Hampelmann-Pass',
+  { id: 'armkreisen', name: 'Armkreisen' },
+  { id: 'sidesteps', name: 'Abwehr-Sidesteps' },
+  { id: 'squatjump', name: 'Sprungwurf-Kniebeugen' },
+  { id: 'plank', name: 'Plank mit Schultertippen' },
+  { id: 'tappings', name: 'Tappings (Heiße Kohlen)' },
+  { id: 'lunge', name: 'Ausfallschritt mit Drehung' },
+  { id: 'blockjump', name: 'Block-Sprünge' },
+  { id: 'jack', name: 'Hampelmann-Pass' },
 ]
 
 const WORK = 20
@@ -76,6 +77,9 @@ export default function TabataMode() {
     setPhase('work')
     setSecondsLeft(WORK)
   }
+
+  const currentName = currentExercise.name
+  const nextName = nextExercise.name
 
   function resetAll() {
     setRunning(false)
@@ -150,18 +154,32 @@ export default function TabataMode() {
         </div>
 
         {/* Aktuelle Übung */}
-        <div className="rounded-2xl bg-black border-2 border-neon p-4">
-          <div className="text-xl uppercase text-neon font-black">Jetzt</div>
-          <div className="text-5xl sm:text-6xl font-black leading-tight break-words">
-            {currentExercise}
+        <div className="rounded-2xl bg-black border-2 border-neon p-4 flex gap-4 items-center">
+          <ExerciseIcon
+            id={currentExercise.id}
+            stroke="#D7FF1E"
+            className="w-24 h-24 sm:w-28 sm:h-28 shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-xl uppercase text-neon font-black">Jetzt</div>
+            <div className="text-4xl sm:text-5xl font-black leading-tight break-words">
+              {currentName}
+            </div>
           </div>
         </div>
 
-        {/* Nächste Übung – extra groß */}
-        <div className="rounded-2xl bg-neutral-900 border-2 border-neutral-700 p-4">
+        {/* Nächste Übung – extra groß, mit Bildvorschau */}
+        <div className="rounded-2xl bg-neutral-900 border-2 border-orange-400 p-4 flex flex-col gap-3">
           <div className="text-xl uppercase text-orange-400 font-black">Als Nächstes</div>
-          <div className="text-6xl sm:text-7xl font-black leading-tight break-words text-white">
-            {nextExercise}
+          <div className="flex gap-4 items-center">
+            <ExerciseIcon
+              id={nextExercise.id}
+              stroke="#fb923c"
+              className="w-36 h-36 sm:w-44 sm:h-44 shrink-0"
+            />
+            <div className="text-5xl sm:text-6xl font-black leading-tight break-words text-white flex-1 min-w-0">
+              {nextName}
+            </div>
           </div>
         </div>
 
@@ -196,23 +214,28 @@ export default function TabataMode() {
             const isCurrent = i === exerciseIndex
             return (
               <li
-                key={ex}
+                key={ex.id}
                 onClick={() => {
                   setExerciseIndex(i)
                   setPhase('work')
                   setSecondsLeft(WORK)
                 }}
                 className={
-                  'px-4 py-3 rounded-xl text-xl font-black flex items-center gap-3 ' +
+                  'px-3 py-2 rounded-xl text-lg font-black flex items-center gap-3 ' +
                   (isCurrent
                     ? 'bg-neon text-black'
                     : 'bg-neutral-900 text-white border border-neutral-800')
                 }
               >
-                <span className="w-9 h-9 rounded-full bg-black text-neon flex items-center justify-center text-base">
+                <span className="w-9 h-9 rounded-full bg-black text-neon flex items-center justify-center text-base shrink-0">
                   {i + 1}
                 </span>
-                <span className="flex-1">{ex}</span>
+                <ExerciseIcon
+                  id={ex.id}
+                  stroke={isCurrent ? '#000' : '#D7FF1E'}
+                  className="w-12 h-12 shrink-0"
+                />
+                <span className="flex-1">{ex.name}</span>
               </li>
             )
           })}
