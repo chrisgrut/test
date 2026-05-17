@@ -2,28 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-}
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 71 100% 56%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 71 100% 56%;
+    --radius: 1rem;
+    color-scheme: dark;
+  }
 
-html,
-body,
-#root {
-  height: 100%;
-  background: #000;
-  color: #fff;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-}
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
 
-body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
+  body {
+    @apply bg-background text-foreground;
+    font-weight: 800;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: -0.01em;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
 
-button {
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: manipulation;
+  * {
+    @apply border-border;
+  }
+
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
 }
