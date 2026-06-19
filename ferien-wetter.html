@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>🏕️ Ferien-Wetter 2026</title>
+  <style>
+    :root {
+      --dk: #c60c30;
+      --dk-bg: #fff5f6;
+      --fr: #002395;
+      --fr-bg: #f0f4ff;
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --orange: #ea580c;
+      --red: #dc2626;
+      --bg: #f0f4f8;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --r: 10px;
+      --shadow: 0 1px 6px rgba(0,0,0,0.09);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100svh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(150deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      padding: 16px 16px 12px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+    }
+    header h1 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+    .h-sub { font-size: 0.78rem; opacity: 0.72; margin: 3px 0 8px; }
+    .countdown {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.14);
+      border-radius: 20px; padding: 5px 14px;
+      font-size: 0.8rem; font-weight: 700;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      position: sticky; top: 84px; z-index: 90;
+    }
+    .dk-select {
+      flex: 1; min-width: 150px;
+      padding: 8px 10px;
+      border: 2px solid var(--dk);
+      border-radius: 8px;
+      font-size: 0.83rem; font-weight: 600;
+      background: #fff; color: var(--text);
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      padding-right: 28px;
+    }
+    .view-tabs {
+      display: flex; gap: 3px;
+      background: #f1f5f9; border-radius: 8px; padding: 3px;
+    }
+    .tab {
+      border: none; background: transparent; padding: 6px 12px;
+      border-radius: 6px; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; color: var(--muted); transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tab.on {
+      background: #fff; color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+
+    /* ── Main ── */
+    main { padding: 10px 14px 32px; max-width: 680px; margin: 0 auto; }
+
+    .info-box {
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+      padding: 9px 12px; font-size: 0.76rem; color: #92400e; margin-bottom: 10px;
+      display: flex; gap: 6px; align-items: flex-start;
+    }
+    .info-box span { flex: 1; }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      font-size: 0.72rem; color: var(--muted);
+      padding: 4px 0 10px; align-items: center;
+    }
+    .ldot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
+    .l-trip { background: #fef08a; border: 1px solid #ca8a04; border-radius: 3px; padding: 1px 5px; font-size: 0.7rem; font-weight: 700; color: #713f12; }
+
+    /* ── Month header ── */
+    .month-bar {
+      text-align: center; font-size: 0.72rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); padding: 14px 0 5px;
+    }
+
+    /* ── Day row ── */
+    .day-row {
+      margin-bottom: 7px;
+      border-radius: var(--r);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      background: var(--card);
+    }
+    .day-row.trip { box-shadow: 0 2px 12px rgba(0,0,0,0.13); }
+    .day-row.today-row { box-shadow: 0 0 0 2px #3b82f6, 0 2px 12px rgba(59,130,246,0.2); }
+
+    .day-head {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+    .day-row.trip .day-head { background: #fefce8; border-bottom-color: #fde047; }
+    .day-row.today-row .day-head { background: #eff6ff; border-bottom-color: #bfdbfe; }
+
+    .dname { font-weight: 800; font-size: 0.82rem; }
+    .ddate { font-size: 0.78rem; color: var(--muted); }
+    .today-tag {
+      margin-left: 4px;
+      background: #3b82f6; color: #fff;
+      font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .trip-tag {
+      margin-left: auto;
+      background: #fde047; color: #713f12;
+      font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    /* ── Weather cards (2-col grid) ── */
+    .wgrid { display: grid; grid-template-columns: 1fr 1fr; }
+    .wgrid.single { grid-template-columns: 1fr; }
+    .wcard { padding: 10px 11px; }
+    .wcard:first-child { border-right: 1px solid #f1f5f9; }
+
+    .wcard-label {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 5px;
+      display: flex; align-items: center; gap: 4px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .wcard-label.dk { color: var(--dk); }
+    .wcard-label.fr { color: var(--fr); }
+
+    .wcard-main { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+    .wicon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+    .temps { display: flex; flex-direction: column; }
+    .tmax { font-size: 1.05rem; font-weight: 800; color: #dc2626; }
+    .tmin { font-size: 0.75rem; font-weight: 700; color: #2563eb; }
+
+    .rain-row { display: flex; align-items: center; gap: 5px; }
+    .rain-bar { flex: 1; height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+    .rain-fill { height: 100%; border-radius: 3px; }
+    .rain-pct { font-size: 0.72rem; font-weight: 800; min-width: 30px; text-align: right; }
+    .r0  .rain-fill { background: #22c55e; } .r0  .rain-pct { color: #16a34a; }
+    .r1  .rain-fill { background: #86efac; } .r1  .rain-pct { color: #16a34a; }
+    .r2  .rain-fill { background: #facc15; } .r2  .rain-pct { color: #ca8a04; }
+    .r3  .rain-fill { background: #f97316; } .r3  .rain-pct { color: #ea580c; }
+    .r4  .rain-fill { background: #ef4444; } .r4  .rain-pct { color: #dc2626; }
+
+    .wcard-wind { font-size: 0.68rem; color: var(--muted); margin-top: 5px; }
+
+    /* Historical / empty */
+    .hist-card { background: #fafafa; }
+    .hist-label { font-size: 0.63rem; color: #9ca3af; margin-bottom: 4px; }
+    .no-data-card { padding: 14px 12px; text-align: center; color: #9ca3af; font-size: 0.78rem; font-style: italic; }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .summary-card {
+      flex: 1; padding: 11px 12px; border-radius: var(--r);
+      background: var(--card); box-shadow: var(--shadow);
+      font-size: 0.8rem;
+    }
+    .summary-card h4 { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .summary-card h4.dk { color: var(--dk); }
+    .summary-card h4.fr { color: var(--fr); }
+    .s-stat { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 3px; }
+    .s-val { font-weight: 700; }
+
+    /* ── Sources ── */
+    .sources {
+      margin-top: 20px; padding: 14px; background: var(--card);
+      border-radius: var(--r); box-shadow: var(--shadow);
+    }
+    .sources h3 {
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--muted); margin-bottom: 10px;
+    }
+    .src-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .src-link {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 11px; border-radius: 8px;
+      text-decoration: none; color: var(--text); font-size: 0.78rem; font-weight: 600;
+    }
+    .src-link:active { opacity: 0.7; }
+    .src-link.dk { background: var(--dk-bg); }
+    .src-link.fr { background: var(--fr-bg); }
+    .src-link.api { background: #f0fdf4; grid-column: span 2; }
+    .src-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .src-info strong { display: block; font-size: 0.8rem; }
+    .src-info span { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
+
+    /* ── Footer ── */
+    .foot {
+      text-align: center; font-size: 0.7rem; color: #9ca3af;
+      padding: 14px 0 6px;
+    }
+    .refresh-btn {
+      display: inline-block; margin-top: 8px;
+      padding: 8px 22px; background: #1e3a5f; color: #fff;
+      border: none; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.02em;
+    }
+    .refresh-btn:active { opacity: 0.8; }
+
+    /* ── Loading / Error ── */
+    .loading { text-align: center; padding: 48px 16px; color: var(--muted); }
+    .spinner {
+      width: 36px; height: 36px; margin: 0 auto 14px;
+      border: 3px solid #e5e7eb; border-top-color: #1e3a5f;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .err { text-align: center; padding: 24px; color: var(--red); font-size: 0.85rem; }
+
+    @media (max-width: 360px) {
+      .src-grid { grid-template-columns: 1fr; }
+      .src-link.api { grid-column: span 1; }
+      .summary-bar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏕️ Wohnmobil-Ferien 2026</h1>
+  <div class="h-sub">4. Juli – 25. Juli &nbsp;·&nbsp; Dänemark vs. Frankreich</div>
+  <div class="countdown" id="countdown">…</div>
+</header>
+
+<div class="controls">
+  <select class="dk-select" id="dkSel" onchange="reload()">
+    <option value="57.7248,10.5739,Skagen">🇩🇰 Skagen</option>
+    <option value="55.5506,8.0838,Blåvand">🇩🇰 Blåvand</option>
+    <option value="57.0167,8.5167,Klitmøller">🇩🇰 Klitmøller</option>
+    <option value="55.1001,14.7055,Bornholm">🇩🇰 Bornholm</option>
+    <option value="54.9667,12.4333,Møn">🇩🇰 Møn (Klint)</option>
+    <option value="54.8833,10.4167,Ærø">🇩🇰 Ærø</option>
+    <option value="55.6761,12.5683,Kopenhagen">🇩🇰 Kopenhagen</option>
+  </select>
+  <div class="view-tabs">
+    <button class="tab" id="t-dk"   onclick="setView('dk')">🇩🇰</button>
+    <button class="tab on" id="t-both" onclick="setView('both')">VS</button>
+    <button class="tab" id="t-fr"   onclick="setView('fr')">🇫🇷</button>
+  </div>
+</div>
+
+<main>
+  <div id="app">
+    <div class="loading"><div class="spinner"></div>Wetterdaten werden geladen…</div>
+  </div>
+</main>
+
+<script>
+'use strict';
+
+const TRIP_START = new Date('2026-07-04T00:00:00');
+const TRIP_END   = new Date('2026-07-25T00:00:00');
+const FR = { lat: 44.9755, lon: -1.1945, name: 'Lacanau-Océan' };
+
+const DAY_DE   = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MON_DE   = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const MON_SH   = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+let view = 'both';
+let cache = {};
+
+/* ── Countdown ── */
+function tick() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diff = Math.round((TRIP_START - now) / 86400000);
+  const el = document.getElementById('countdown');
+  if (!el) return;
+  if (diff > 0)       el.textContent = `⏳ Noch ${diff} Tag${diff===1?'':'e'} bis zum Abflug!`;
+  else if (diff === 0) el.textContent = '🎉 Heute geht\'s los!';
+  else if (now <= TRIP_END) el.textContent = `🏕️ Ferientag ${-diff + 1} von 22`;
+  else                el.textContent = '✅ Ferien vorbei – bis nächstes Mal!';
+}
+
+/* ── Location helper ── */
+function getDK() {
+  const [lat, lon, name] = document.getElementById('dkSel').value.split(',');
+  return { lat: +lat, lon: +lon, name };
+}
+
+/* ── View toggle ── */
+function setView(v) {
+  view = v;
+  ['dk','both','fr'].forEach(x => document.getElementById('t-'+x).classList.toggle('on', x===v));
+  render();
+}
+
+/* ── API calls ── */
+async function apiFetch(url, key) {
+  if (cache[key]) return cache[key];
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  cache[key] = data;
+  return data;
+}
+
+function forecastUrl(lat, lon) {
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,` +
+    `precipitation_sum,weathercode,windspeed_10m_max&forecast_days=16&timezone=auto`;
+}
+
+function histUrl(lat, lon) {
+  return `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}` +
+    `&start_date=2025-07-04&end_date=2025-07-25` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto`;
+}
+
+/* ── Load data ── */
+async function reload() {
+  cache = {};
+  document.getElementById('app').innerHTML =
+    '<div class="loading"><div class="spinner"></div>Wetterdaten werden geladen…</div>';
+  await load();
+}
+
+let dkF, frF, dkH, frH;
+
+async function load() {
+  const dk = getDK();
+  try {
+    [dkF, frF, dkH, frH] = await Promise.all([
+      apiFetch(forecastUrl(dk.lat, dk.lon), 'dkF'),
+      apiFetch(forecastUrl(FR.lat, FR.lon),  'frF'),
+      apiFetch(histUrl(dk.lat, dk.lon),       'dkH'),
+      apiFetch(histUrl(FR.lat, FR.lon),        'frH'),
+    ]);
+    render();
+  } catch(e) {
+    document.getElementById('app').innerHTML =
+      `<div class="err">⚠️ Fehler beim Laden.<br><small>${e.message}</small><br><br>` +
+      `<button class="refresh-btn" onclick="reload()">↻ Erneut versuchen</button></div>`;
+  }
+}
+
+/* ── Build date map ── */
+function dateMap(daily, hist = false) {
+  const m = {};
+  if (!daily?.time) return m;
+  daily.time.forEach((d, i) => {
+    m[d] = {
+      tMax: daily.temperature_2m_max?.[i],
+      tMin: daily.temperature_2m_min?.[i],
+      rain: hist ? null : (daily.precipitation_probability_max?.[i] ?? null),
+      mm:   daily.precipitation_sum?.[i] ?? null,
+      code: daily.weathercode?.[i] ?? null,
+      wind: daily.windspeed_10m_max?.[i] ?? null,
+      hist,
+    };
+  });
+  return m;
+}
+
+/* ── WMO weather codes ── */
+function wxInfo(c) {
+  if (c === null || c === undefined) return { icon:'❓', lbl:'' };
+  if (c === 0)       return { icon:'☀️',  lbl:'Sonnig' };
+  if (c <= 2)        return { icon:'🌤',  lbl:'Heiter' };
+  if (c === 3)       return { icon:'☁️',  lbl:'Bedeckt' };
+  if (c <= 48)       return { icon:'🌫',  lbl:'Nebel' };
+  if (c <= 55)       return { icon:'🌦',  lbl:'Niesel' };
+  if (c <= 65)       return { icon:'🌧',  lbl:'Regen' };
+  if (c <= 77)       return { icon:'❄️',  lbl:'Schnee' };
+  if (c <= 82)       return { icon:'🌦',  lbl:'Schauer' };
+  if (c <= 99)       return { icon:'⛈',  lbl:'Gewitter' };
+  return { icon:'🌡', lbl:'' };
+}
+
+/* ── Rain class ── */
+function rainCls(p) {
+  if (p <= 20) return 'r0';
+  if (p <= 40) return 'r1';
+  if (p <= 60) return 'r2';
+  if (p <= 80) return 'r3';
+  return 'r4';
+}
+
+function fmt(v, dec=0) {
+  if (v === null || v === undefined) return '–';
+  return Number(v).toFixed(dec);
+}
+
+/* ── Single weather card ── */
+function renderCard(day, histDay, side, locName) {
+  const cls = side; // 'dk' or 'fr'
+  const flag = side === 'dk' ? '🇩🇰' : '🇫🇷';
+
+  if (day) {
+    const wx = wxInfo(day.code);
+    const p = day.rain ?? 0;
+    const rc = rainCls(p);
+    return `<div class="wcard">
+      <div class="wcard-label ${cls}">${flag} ${locName}</div>
+      <div class="wcard-main">
+        <span class="wicon">${wx.icon}</span>
+        <div class="temps">
+          <span class="tmax">${fmt(day.tMax)}°</span>
+          <span class="tmin">${fmt(day.tMin)}°</span>
+        </div>
+      </div>
+      <div class="rain-row ${rc}">
+        <span style="font-size:0.7rem">🌧</span>
+        <div class="rain-bar"><div class="rain-fill" style="width:${p}%"></div></div>
+        <span class="rain-pct">${p}%</span>
+      </div>
+      ${day.wind ? `<div class="wcard-wind">💨 ${fmt(day.wind)} km/h</div>` : ''}
+    </div>`;
+  }
+
+  if (histDay) {
+    const wx = wxInfo(histDay.code);
+    return `<div class="wcard hist-card">
+      <div class="wcard-label ${cls}">${flag} ${locName}</div>
+      <div class="hist-label">📅 Referenz 2025</div>
+      <div class="wcard-main">
+        <span class="wicon" style="opacity:0.55">${wx.icon}</span>
+        <div class="temps" style="opacity:0.65">
+          <span class="tmax">${fmt(histDay.tMax)}°</span>
+          <span class="tmin">${fmt(histDay.tMin)}°</span>
+        </div>
+      </div>
+      ${histDay.mm !== null ? `<div class="wcard-wind" style="margin-top:0">💧 ${fmt(histDay.mm,1)} mm (2025)</div>` : ''}
+    </div>`;
+  }
+
+  return `<div class="wcard"><div class="no-data-card">Noch nicht verfügbar</div></div>`;
+}
+
+/* ── Summary stats (trip days only, from forecast) ── */
+function summaryStats(fMap, hMap, locName, side) {
+  const fDays = [], hDays = [];
+  const d = new Date(TRIP_START);
+  while (d <= TRIP_END) {
+    const ds = d.toISOString().slice(0,10);
+    const md = ds.slice(5);
+    if (fMap[ds])          fDays.push(fMap[ds]);
+    else if (hMap['2025-'+md]) hDays.push(hMap['2025-'+md]);
+    d.setDate(d.getDate()+1);
+  }
+
+  const allDays = [...fDays, ...hDays];
+  const temps = allDays.map(x => x.tMax).filter(x => x !== null);
+  const avgMax = temps.length ? (temps.reduce((a,b)=>a+b,0)/temps.length) : null;
+  const fRain  = fDays.filter(x => x.rain !== null);
+  const avgRain = fRain.length ? Math.round(fRain.reduce((a,b)=>a+(b.rain??0),0)/fRain.length) : null;
+  const rainyDays = fRain.filter(x => (x.rain??0) > 50).length;
+  const flag = side === 'dk' ? '🇩🇰' : '🇫🇷';
+  const label = fDays.length > 0 ? `${fDays.length}T Vorhersage + ${hDays.length}T Ref.` : `${hDays.length}T Ref. (2025)`;
+
+  return `<div class="summary-card">
+    <h4 class="${side}">${flag} ${locName}</h4>
+    <div class="s-stat"><span>Ø Max-Temp.</span><span class="s-val">${avgMax !== null ? Math.round(avgMax)+'°' : '–'}</span></div>
+    <div class="s-stat"><span>Ø Regen-W.</span><span class="s-val">${avgRain !== null ? avgRain+'%' : '–'}</span></div>
+    <div class="s-stat"><span>Regentage >50%</span><span class="s-val">${rainyDays > 0 ? rainyDays : (fRain.length > 0 ? '0 🎉' : '–')}</span></div>
+    <div style="font-size:0.62rem;color:#9ca3af;margin-top:5px">${label}</div>
+  </div>`;
+}
+
+/* ── Main render ── */
+function render() {
+  if (!dkF || !frF || !dkH || !frH) return;
+  const dk = getDK();
+
+  const dkFmap = dateMap(dkF.daily);
+  const frFmap = dateMap(frF.daily);
+  const dkHmap = dateMap(dkH.daily, true);
+  const frHmap = dateMap(frH.daily, true);
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end   = new Date(TRIP_END);
+
+  let html = '';
+
+  /* Info box */
+  const forecastUntil = new Date(today); forecastUntil.setDate(forecastUntil.getDate() + 15);
+  const fu = `${forecastUntil.getDate()}. ${MON_SH[forecastUntil.getMonth()]}`;
+  html += `<div class="info-box">ℹ️ <span>Vorhersage bis <strong>${fu}</strong> verfügbar. ` +
+    `Für spätere Ferientage wird das Wetter 2025 als Referenz angezeigt (abgedunkelt). ` +
+    `Die Vorhersage wird täglich aktueller.</span></div>`;
+
+  /* Legend */
+  html += `<div class="legend">
+    <span><span class="ldot" style="background:#22c55e"></span>0–20%</span>
+    <span><span class="ldot" style="background:#86efac"></span>20–40%</span>
+    <span><span class="ldot" style="background:#facc15"></span>40–60%</span>
+    <span><span class="ldot" style="background:#f97316"></span>60–80%</span>
+    <span><span class="ldot" style="background:#ef4444"></span>>80%</span>
+    <span style="margin-left:auto"><span class="l-trip">⛺ FERIEN</span> = Reisezeitraum</span>
+  </div>`;
+
+  /* Summary cards */
+  if (view === 'both' || view === 'dk') {
+    if (view === 'both') {
+      html += `<div class="summary-bar">
+        ${summaryStats(dkFmap, dkHmap, dk.name, 'dk')}
+        ${summaryStats(frFmap, frHmap, FR.name,  'fr')}
+      </div>`;
+    } else if (view === 'dk') {
+      html += `<div class="summary-bar">${summaryStats(dkFmap, dkHmap, dk.name, 'dk')}</div>`;
+    }
+  } else {
+    html += `<div class="summary-bar">${summaryStats(frFmap, frHmap, FR.name, 'fr')}</div>`;
+  }
+
+  /* Day rows */
+  let curMonth = -1;
+  const d = new Date(today);
+  while (d <= end) {
+    const ds  = d.toISOString().slice(0,10);
+    const md  = ds.slice(5);
+    const mon = d.getMonth();
+    if (mon !== curMonth) {
+      curMonth = mon;
+      html += `<div class="month-bar">${MON_DE[mon]} ${d.getFullYear()}</div>`;
+    }
+
+    const isToday = d.getTime() === today.getTime();
+    const isTrip  = d >= TRIP_START && d <= TRIP_END;
+    const rowCls  = isToday ? 'day-row today-row' : isTrip ? 'day-row trip' : 'day-row';
+
+    const dkDay  = dkFmap[ds];
+    const frDay  = frFmap[ds];
+    const dkHist = dkHmap['2025-' + md];
+    const frHist = frHmap['2025-' + md];
+
+    html += `<div class="${rowCls}">`;
+    html += `<div class="day-head">
+      <span class="dname">${DAY_DE[d.getDay()]}</span>
+      <span class="ddate">${d.getDate()}. ${MON_SH[d.getMonth()]}</span>
+      ${isToday ? '<span class="today-tag">Heute</span>' : ''}
+      ${isTrip  ? '<span class="trip-tag">⛺ Ferien</span>' : ''}
+    </div>`;
+
+    const gridCls = view === 'both' ? 'wgrid' : 'wgrid single';
+    html += `<div class="${gridCls}">`;
+    if (view !== 'fr') html += renderCard(dkDay, dkHist, 'dk', dk.name);
+    if (view !== 'dk') html += renderCard(frDay, frHist, 'fr', FR.name);
+    html += `</div></div>`;
+
+    d.setDate(d.getDate() + 1);
+  }
+
+  /* Footer */
+  html += `<div class="foot">
+    Daten: Open-Meteo (ECMWF) · Stand: ${new Date().toLocaleString('de-CH', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}<br>
+    <button class="refresh-btn" onclick="reload()">↻ Aktualisieren</button>
+  </div>`;
+
+  /* Official sources */
+  html += `<div class="sources">
+    <h3>Offizielle Wetterdienste</h3>
+    <div class="src-grid">
+      <a class="src-link dk" href="https://www.dmi.dk/vejr/" target="_blank" rel="noopener">
+        <span class="src-icon">🇩🇰</span>
+        <div class="src-info"><strong>DMI.dk</strong><span>Dänischer Wetterdienst</span></div>
+      </a>
+      <a class="src-link fr" href="https://meteofrance.com/previsions-meteo-france/lacanau/33680" target="_blank" rel="noopener">
+        <span class="src-icon">🇫🇷</span>
+        <div class="src-info"><strong>Météo-France</strong><span>Lacanau-Océan</span></div>
+      </a>
+      <a class="src-link fr" href="https://www.surf-report.com/meteo-surf/lacanau-ocean-s1019.html" target="_blank" rel="noopener" style="background:#fff8f0">
+        <span class="src-icon">🏄</span>
+        <div class="src-info"><strong>Surf-Report</strong><span>Wind & Wellen Lacanau</span></div>
+      </a>
+      <a class="src-link dk" href="https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-6419-Skagen" target="_blank" rel="noopener" style="background:#f0f7ff">
+        <span class="src-icon">🔵</span>
+        <div class="src-info"><strong>Yr.no</strong><span>14-Tage DK (Norwegen)</span></div>
+      </a>
+      <a class="src-link api" href="https://open-meteo.com/" target="_blank" rel="noopener">
+        <span class="src-icon">📡</span>
+        <div class="src-info"><strong>Open-Meteo</strong>
+          <span>Kostenlose API · ECMWF + nationale Wetterdienste · max. 16 Tage Vorhersage</span>
+        </div>
+      </a>
+    </div>
+  </div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+
+/* ── Init ── */
+tick();
+load();
+</script>
+</body>
+</html>
