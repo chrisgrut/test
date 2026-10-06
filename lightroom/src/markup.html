@@ -1,0 +1,56 @@
+<div id="app" class="v-detail">
+  <header id="top">
+    <button class="ib" id="tSidebar" title="Meine Fotos ein-/ausblenden (P)" aria-label="Meine Fotos ein-/ausblenden"></button>
+    <button class="ib m-only" id="tBack" title="Zurück zum Raster" aria-label="Zurück zum Raster"></button>
+    <button class="ib m-only" id="tInfoM" title="Informationen" aria-label="Informationen"></button>
+    <div class="brand"><span class="mark" aria-hidden="true">Dk</span><span>Dunkelkammer</span></div>
+    <label class="search" id="searchBox"><span id="searchIc"></span><span id="searchChips"></span><input id="search" type="search" placeholder="Alle Fotos durchsuchen" aria-label="Fotos durchsuchen" autocomplete="off"><button class="ib" id="searchClear" style="width:24px;height:24px" hidden aria-label="Suche leeren"></button></label>
+    <button class="ib" id="tFilter" title="Filtern" aria-label="Filtern"></button>
+    <span class="grow m-only"></span>
+    <button class="ib" id="tUndo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
+    <button class="ib" id="tRedo" title="Wiederholen (Strg+Umschalt+Z)" aria-label="Wiederholen"></button>
+    <span class="vsep"></span>
+    <button class="ib" id="tShare" title="Exportieren (Umschalt+E)" aria-label="Exportieren"></button>
+    <button class="ib" id="tHelp" title="Tastaturbefehle (?)" aria-label="Tastaturbefehle"></button>
+    <span class="ib cloud-ok" id="tCloud" title="Alle Änderungen sind in diesem Browser gespeichert"></span>
+    <button class="ib m-only" id="tMore" title="Weitere Optionen" aria-label="Weitere Optionen"></button>
+  </header>
+
+  <aside id="left" aria-label="Meine Fotos"></aside>
+
+  <main id="center">
+    <div id="gridHead" hidden></div>
+    <div id="grid" hidden tabindex="0" aria-label="Fotos"></div>
+    <div id="detail">
+      <div id="stage" class="fit">
+        <canvas id="glCanvas" aria-label="Foto"></canvas>
+        <canvas id="overlay"></canvas>
+        <div class="cmp-labels" id="cmpLabels" hidden></div>
+        <div class="hud" id="hud" hidden></div>
+        <div class="hud r" id="hudR" hidden></div>
+        <div class="stage-msg" id="stageMsg" hidden></div>
+        <div id="maskList" hidden></div>
+      </div>
+    </div>
+    <div id="film" role="listbox" aria-label="Filmstreifen"></div>
+    <footer id="bottom"></footer>
+  </main>
+
+  <aside id="right" aria-label="Bedienfeld">
+    <div id="histoBox">
+      <canvas id="histo" aria-label="Histogramm"></canvas>
+      <div class="histo-foot" id="histoFoot"></div>
+    </div>
+    <div id="mSheetHead"><h2 id="mSheetTitle"></h2><button class="done" id="mSheetDone">Fertig</button></div>
+    <div id="panel"></div>
+  </aside>
+
+  <nav id="rail" aria-label="Werkzeuge"></nav>
+  <nav id="mSections" aria-label="Bereiche"></nav>
+  <nav id="mTools" aria-label="Werkzeuge"></nav>
+</div>
+<input type="file" id="fileInput" accept="image/*" multiple hidden>
+<div id="toast" hidden></div>
+<div id="progress" hidden><div id="progressText"></div><div class="bar"><i id="progressBar"></i></div></div>
+<div id="drop" hidden>Fotos hier ablegen, um sie hinzuzufügen</div>
+<div id="boot"><div><div class="mark">Dk</div><div id="bootMsg">Dunkelkammer wird gestartet …</div><div class="bar"><i id="bootBar"></i></div></div></div>
