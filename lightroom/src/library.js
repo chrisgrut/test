@@ -12,7 +12,7 @@ function renderLeft() {
   const L = $('#left'); L.replaceChildren();
   L.append(el('div', { class: 'ltabs' }, el('span', { class: 'on', html: icon('photos', 16) + 'Meine Fotos' })));
   const sec1 = el('div', { class: 'lsec' });
-  sec1.append(el('button', { class: 'lrow', onclick: () => $('#fileInput').click(), html: icon('plus', 18) + '<span>Fotos hinzufügen</span>' }));
+  sec1.append(el('label', { class: 'lrow', for: 'fileInput', role: 'button', html: icon('plus', 18) + '<span>Fotos hinzufügen</span>' }));
   const cnt = f => S.photos.filter(f).length;
   const rows = [['all', 'photos', S.photos.length], ['recent', 'recent', cnt(p => Date.now() - p.added < 2592e6)], ['edited', 'edit', cnt(p => isEdited(p.settings))], ['picked', 'flag', cnt(p => p.flag === 1)]];
   for (const [k, ic, n] of rows) sec1.append(el('button', { class: 'lrow' + (S.source.kind === k ? ' on' : ''), onclick: () => setSource({ kind: k }), html: icon(ic, 18) + `<span>${SOURCES[k]}</span><span class="cnt">${n}</span>` }));
@@ -79,7 +79,7 @@ function renderGrid() {
   $('#gridHead').replaceChildren(el('span', { html: icon(S.source.kind === 'album' ? 'album' : 'photos', 18) }), el('span', { class: 't' }, sourceTitle()), el('span', { class: 'c' }, `${S.sel.size > 1 ? S.sel.size + ' ausgewählt · ' : ''}${vis.length} von ${S.photos.filter(inSource).length} Fotos${vis.length !== S.photos.filter(inSource).length ? ' (gefiltert)' : ''}`));
   if (!vis.length) {
     G.append(el('div', { class: 'empty' }, el('b', {}, S.photos.length ? 'Keine Fotos gefunden' : 'Noch keine Fotos'), el('div', {}, S.photos.length ? 'Passe Suche oder Filter an.' : 'Füge Fotos hinzu oder ziehe sie in dieses Fenster.'),
-      el('div', { style: 'display:flex;gap:8px;justify-content:center' }, S.photos.length ? el('button', { class: 'gbtn', onclick: resetFilters }, 'Filter zurücksetzen') : el('button', { class: 'gbtn blue', onclick: () => $('#fileInput').click() }, 'Fotos hinzufügen'), !S.photos.some(p => p.sample) ? el('button', { class: 'gbtn', onclick: reloadSamples }, 'Beispielfotos laden') : null)));
+      el('div', { style: 'display:flex;gap:8px;justify-content:center' }, S.photos.length ? el('button', { class: 'gbtn', onclick: resetFilters }, 'Filter zurücksetzen') : el('label', { class: 'gbtn blue', for: 'fileInput', role: 'button' }, 'Fotos hinzufügen'), !S.photos.some(p => p.sample) ? el('button', { class: 'gbtn', onclick: reloadSamples }, 'Beispielfotos laden') : null)));
     return;
   }
   const W = G.clientWidth - 4;

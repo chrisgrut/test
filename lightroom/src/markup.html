@@ -13,6 +13,7 @@
     <button class="ib" id="tShare" title="Exportieren (Umschalt+E)" aria-label="Exportieren"></button>
     <button class="ib" id="tHelp" title="Tastaturbefehle (?)" aria-label="Tastaturbefehle"></button>
     <span class="ib cloud-ok" id="tCloud" title="Alle Änderungen sind in diesem Browser gespeichert"></span>
+    <label class="ib m-only add-m" id="tAddM" for="fileInput" title="Fotos hinzufügen" aria-label="Fotos hinzufügen" role="button"></label>
     <button class="ib m-only" id="tMore" title="Weitere Optionen" aria-label="Weitere Optionen"></button>
   </header>
 
@@ -49,7 +50,7 @@
   <nav id="mSections" aria-label="Bereiche"></nav>
   <nav id="mTools" aria-label="Werkzeuge"></nav>
 </div>
-<input type="file" id="fileInput" accept="image/*" multiple hidden>
+<input type="file" id="fileInput" class="vh" accept="image/*" multiple tabindex="-1" aria-hidden="true">
 <div id="toast" hidden></div>
 <div id="progress" hidden><div id="progressText"></div><div class="bar"><i id="progressBar"></i></div></div>
 <div id="drop" hidden>Fotos hier ablegen, um sie hinzuzufügen</div>

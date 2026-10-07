@@ -69,11 +69,30 @@ async function runThumbs() {
 
 /* ---------- Laden ---------- */
 const imgCache = new Map();
+/* Bild dekodieren und dabei verkleinern. Rückfall über <img>, falls createImageBitmap scheitert
+   (z. B. sehr große Handyfotos oder Formate, die nur das Bild-Element des Browsers kennt). */
+async function decodeImage(blob, maxSide) {
+  let src = null, w = 0, h = 0, release = () => { };
+  try {
+    const b = await createImageBitmap(blob); src = b; w = b.width; h = b.height; release = () => b.close && b.close();
+  } catch (e) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const im = new Image(); im.src = url;
+      if (im.decode) await im.decode(); else await new Promise((res, rej) => { im.onload = res; im.onerror = rej; });
+      src = im; w = im.naturalWidth; h = im.naturalHeight; release = () => URL.revokeObjectURL(url);
+    } catch (e2) { URL.revokeObjectURL(url); throw new Error('decode'); }
+  }
+  if (!w || !h) { release(); throw new Error('decode'); }
+  const k = Math.min(1, maxSide / Math.max(w, h));
+  if (k >= 1 && typeof ImageBitmap !== 'undefined' && src instanceof ImageBitmap) return { img: src, w, h, ow: w, oh: h };
+  const cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k)), c = mkCanvas(cw, ch), x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, cw, ch); release();
+  return { img: c, w: cw, h: ch, ow: w, oh: h };
+}
 async function decodePhoto(p, maxSide) {
   const blob = await DB.getBlob(p.id); if (!blob) throw new Error('Originaldatei fehlt');
-  const bmp = await createImageBitmap(blob); const w = bmp.width, h = bmp.height, k = Math.min(1, maxSide / Math.max(w, h));
-  if (k < 1) { const c = mkCanvas(Math.round(w * k), Math.round(h * k)), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(bmp, 0, 0, c.width, c.height); bmp.close && bmp.close(); return { img: c, w: c.width, h: c.height }; }
-  return { img: bmp, w, h };
+  return decodeImage(blob, maxSide);
 }
 async function getImage(p, maxSide) {
   if (imgCache.has(p.id)) { const v = imgCache.get(p.id); imgCache.delete(p.id); imgCache.set(p.id, v); return v; }
@@ -93,25 +112,25 @@ async function withBG(p, fn) {
 
 /* ---------- Import ---------- */
 async function addPhoto(blob, name, extra = {}) {
-  const bmp = await createImageBitmap(blob); const w = bmp.width, h = bmp.height;
-  let exif = null; if (/jpe?g/i.test(blob.type) || /\.jpe?g$/i.test(name)) exif = parseExif(await blob.slice(0, 256 * 1024).arrayBuffer());
-  const thumb = thumbFromImage(bmp, w, h), stats = computeStats(bmp, w, h); bmp.close && bmp.close();
+  const im = await decodeImage(blob, 1600), w = im.ow, h = im.oh;
+  let exif = null; if (/jpe?g/i.test(blob.type) || /\.jpe?g$/i.test(name)) { try { exif = parseExif(await blob.slice(0, 256 * 1024).arrayBuffer()); } catch { } }
+  const thumb = thumbFromImage(im.img, im.w, im.h), stats = computeStats(im.img, im.w, im.h); im.img.close && im.img.close();
   const id = uid();
   const p = { id, name, w, h, ratio: w / h, size: blob.size, type: blob.type || 'image', added: Date.now() + S.photos.length, captured: exifDate(exif && exif.DateTimeOriginal) || extra.captured || Date.now(), rating: extra.rating || 0, flag: 0, settings: DEFAULTS(), thumb, exif, stats, sample: !!extra.sample, note: extra.note || '', title: '', caption: '', copyright: '', keywords: extra.keywords || [], versions: [] };
   await DB.putBlob(id, blob); await DB.put(p); S.photos.push(p); S.byId.set(id, p); return p;
 }
 async function importFiles(files, albumId) {
-  const list = [...files].filter(f => (f.type || '').startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(f.name || ''));
-  if (!list.length) { toast('Keine unterstützten Bilddateien gefunden (JPEG, PNG, WebP, AVIF, GIF).'); return; }
+  const list = [...files].filter(f => (f.type || '').startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|bmp|heic|heif)$/i.test(f.name || ''));
+  if (!list.length) { toast('Keine Bilddateien gefunden. Unterstützt werden JPEG, PNG, WebP, AVIF und GIF.'); return; }
   let ok = 0, first = null;
   for (const [i, f] of list.entries()) {
     progress(`Fotos werden hinzugefügt … ${i + 1} von ${list.length}`, (i + .5) / list.length);
     try { const p = await addPhoto(f, f.name || ('Eingefügt_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.png'), { captured: f.lastModified }); ok++; first = first || p; if (albumId) { const a = S.albums.find(a => a.id === albumId); a && a.ids.push(p.id); } }
-    catch { toast(`${f.name}: Dieses Format kann der Browser nicht öffnen. RAW- und HEIC-Dateien bitte vorher in JPEG umwandeln.`); await sleep(1200); }
+    catch (e) { console.warn('Import fehlgeschlagen', f.name, f.type, e); toast(/hei[cf]/i.test(f.type + f.name) ? `${f.name}: HEIC-Fotos kann dieser Browser nicht öffnen. Bitte als JPEG teilen oder in der Kamera „Maximale Kompatibilität“ wählen.` : `${f.name} konnte nicht geöffnet werden. Dieser Browser kennt das Format nicht.`, 7000); await sleep(1800); }
   }
   progress(null);
   if (albumId) saveAlbums();
-  if (ok) { toast(`${ok} Foto${ok > 1 ? 's' : ''} hinzugefügt`); S.sel = new Set([first.id]); refreshAll(); setCurrent(first.id); }
+  if (ok) { if (ok < list.length) await sleep(3000); toast(`${ok} Foto${ok > 1 ? 's' : ''} hinzugefügt`); S.sel = new Set([first.id]); refreshAll(); setCurrent(first.id); }
 }
 async function loadSamples(onStep) {
   for (const [i, sm] of SAMPLES.entries()) {

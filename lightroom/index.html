@@ -23,6 +23,10 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.vh{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;z-index:-1}
+label.lrow,label.gbtn{cursor:pointer}
+.add-m{background:var(--blue);color:#fff!important;border-radius:50%;width:32px;height:32px;margin:0 4px}
+.add-m:hover{background:var(--blue-h)!important}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:#000}
 html,body{height:100%;margin:0}
 body{background:var(--stage);color:var(--tx);font:13px/1.35 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
@@ -444,6 +448,7 @@ select.sel{background:var(--field);border:1px solid #444;border-radius:3px;paddi
     <button class="ib" id="tShare" title="Exportieren (Umschalt+E)" aria-label="Exportieren"></button>
     <button class="ib" id="tHelp" title="Tastaturbefehle (?)" aria-label="Tastaturbefehle"></button>
     <span class="ib cloud-ok" id="tCloud" title="Alle Änderungen sind in diesem Browser gespeichert"></span>
+    <label class="ib m-only add-m" id="tAddM" for="fileInput" title="Fotos hinzufügen" aria-label="Fotos hinzufügen" role="button"></label>
     <button class="ib m-only" id="tMore" title="Weitere Optionen" aria-label="Weitere Optionen"></button>
   </header>
 
@@ -480,7 +485,7 @@ select.sel{background:var(--field);border:1px solid #444;border-radius:3px;paddi
   <nav id="mSections" aria-label="Bereiche"></nav>
   <nav id="mTools" aria-label="Werkzeuge"></nav>
 </div>
-<input type="file" id="fileInput" accept="image/*" multiple hidden>
+<input type="file" id="fileInput" class="vh" accept="image/*" multiple tabindex="-1" aria-hidden="true">
 <div id="toast" hidden></div>
 <div id="progress" hidden><div id="progressText"></div><div class="bar"><i id="progressBar"></i></div></div>
 <div id="drop" hidden>Fotos hier ablegen, um sie hinzuzufügen</div>
@@ -1730,11 +1735,30 @@ async function runThumbs() {
 
 /* ---------- Laden ---------- */
 const imgCache = new Map();
+/* Bild dekodieren und dabei verkleinern. Rückfall über <img>, falls createImageBitmap scheitert
+   (z. B. sehr große Handyfotos oder Formate, die nur das Bild-Element des Browsers kennt). */
+async function decodeImage(blob, maxSide) {
+  let src = null, w = 0, h = 0, release = () => { };
+  try {
+    const b = await createImageBitmap(blob); src = b; w = b.width; h = b.height; release = () => b.close && b.close();
+  } catch (e) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const im = new Image(); im.src = url;
+      if (im.decode) await im.decode(); else await new Promise((res, rej) => { im.onload = res; im.onerror = rej; });
+      src = im; w = im.naturalWidth; h = im.naturalHeight; release = () => URL.revokeObjectURL(url);
+    } catch (e2) { URL.revokeObjectURL(url); throw new Error('decode'); }
+  }
+  if (!w || !h) { release(); throw new Error('decode'); }
+  const k = Math.min(1, maxSide / Math.max(w, h));
+  if (k >= 1 && typeof ImageBitmap !== 'undefined' && src instanceof ImageBitmap) return { img: src, w, h, ow: w, oh: h };
+  const cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k)), c = mkCanvas(cw, ch), x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, cw, ch); release();
+  return { img: c, w: cw, h: ch, ow: w, oh: h };
+}
 async function decodePhoto(p, maxSide) {
   const blob = await DB.getBlob(p.id); if (!blob) throw new Error('Originaldatei fehlt');
-  const bmp = await createImageBitmap(blob); const w = bmp.width, h = bmp.height, k = Math.min(1, maxSide / Math.max(w, h));
-  if (k < 1) { const c = mkCanvas(Math.round(w * k), Math.round(h * k)), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(bmp, 0, 0, c.width, c.height); bmp.close && bmp.close(); return { img: c, w: c.width, h: c.height }; }
-  return { img: bmp, w, h };
+  return decodeImage(blob, maxSide);
 }
 async function getImage(p, maxSide) {
   if (imgCache.has(p.id)) { const v = imgCache.get(p.id); imgCache.delete(p.id); imgCache.set(p.id, v); return v; }
@@ -1754,25 +1778,25 @@ async function withBG(p, fn) {
 
 /* ---------- Import ---------- */
 async function addPhoto(blob, name, extra = {}) {
-  const bmp = await createImageBitmap(blob); const w = bmp.width, h = bmp.height;
-  let exif = null; if (/jpe?g/i.test(blob.type) || /\.jpe?g$/i.test(name)) exif = parseExif(await blob.slice(0, 256 * 1024).arrayBuffer());
-  const thumb = thumbFromImage(bmp, w, h), stats = computeStats(bmp, w, h); bmp.close && bmp.close();
+  const im = await decodeImage(blob, 1600), w = im.ow, h = im.oh;
+  let exif = null; if (/jpe?g/i.test(blob.type) || /\.jpe?g$/i.test(name)) { try { exif = parseExif(await blob.slice(0, 256 * 1024).arrayBuffer()); } catch { } }
+  const thumb = thumbFromImage(im.img, im.w, im.h), stats = computeStats(im.img, im.w, im.h); im.img.close && im.img.close();
   const id = uid();
   const p = { id, name, w, h, ratio: w / h, size: blob.size, type: blob.type || 'image', added: Date.now() + S.photos.length, captured: exifDate(exif && exif.DateTimeOriginal) || extra.captured || Date.now(), rating: extra.rating || 0, flag: 0, settings: DEFAULTS(), thumb, exif, stats, sample: !!extra.sample, note: extra.note || '', title: '', caption: '', copyright: '', keywords: extra.keywords || [], versions: [] };
   await DB.putBlob(id, blob); await DB.put(p); S.photos.push(p); S.byId.set(id, p); return p;
 }
 async function importFiles(files, albumId) {
-  const list = [...files].filter(f => (f.type || '').startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(f.name || ''));
-  if (!list.length) { toast('Keine unterstützten Bilddateien gefunden (JPEG, PNG, WebP, AVIF, GIF).'); return; }
+  const list = [...files].filter(f => (f.type || '').startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|bmp|heic|heif)$/i.test(f.name || ''));
+  if (!list.length) { toast('Keine Bilddateien gefunden. Unterstützt werden JPEG, PNG, WebP, AVIF und GIF.'); return; }
   let ok = 0, first = null;
   for (const [i, f] of list.entries()) {
     progress(`Fotos werden hinzugefügt … ${i + 1} von ${list.length}`, (i + .5) / list.length);
     try { const p = await addPhoto(f, f.name || ('Eingefügt_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.png'), { captured: f.lastModified }); ok++; first = first || p; if (albumId) { const a = S.albums.find(a => a.id === albumId); a && a.ids.push(p.id); } }
-    catch { toast(`${f.name}: Dieses Format kann der Browser nicht öffnen. RAW- und HEIC-Dateien bitte vorher in JPEG umwandeln.`); await sleep(1200); }
+    catch (e) { console.warn('Import fehlgeschlagen', f.name, f.type, e); toast(/hei[cf]/i.test(f.type + f.name) ? `${f.name}: HEIC-Fotos kann dieser Browser nicht öffnen. Bitte als JPEG teilen oder in der Kamera „Maximale Kompatibilität“ wählen.` : `${f.name} konnte nicht geöffnet werden. Dieser Browser kennt das Format nicht.`, 7000); await sleep(1800); }
   }
   progress(null);
   if (albumId) saveAlbums();
-  if (ok) { toast(`${ok} Foto${ok > 1 ? 's' : ''} hinzugefügt`); S.sel = new Set([first.id]); refreshAll(); setCurrent(first.id); }
+  if (ok) { if (ok < list.length) await sleep(3000); toast(`${ok} Foto${ok > 1 ? 's' : ''} hinzugefügt`); S.sel = new Set([first.id]); refreshAll(); setCurrent(first.id); }
 }
 async function loadSamples(onStep) {
   for (const [i, sm] of SAMPLES.entries()) {
@@ -3124,7 +3148,7 @@ function renderLeft() {
   const L = $('#left'); L.replaceChildren();
   L.append(el('div', { class: 'ltabs' }, el('span', { class: 'on', html: icon('photos', 16) + 'Meine Fotos' })));
   const sec1 = el('div', { class: 'lsec' });
-  sec1.append(el('button', { class: 'lrow', onclick: () => $('#fileInput').click(), html: icon('plus', 18) + '<span>Fotos hinzufügen</span>' }));
+  sec1.append(el('label', { class: 'lrow', for: 'fileInput', role: 'button', html: icon('plus', 18) + '<span>Fotos hinzufügen</span>' }));
   const cnt = f => S.photos.filter(f).length;
   const rows = [['all', 'photos', S.photos.length], ['recent', 'recent', cnt(p => Date.now() - p.added < 2592e6)], ['edited', 'edit', cnt(p => isEdited(p.settings))], ['picked', 'flag', cnt(p => p.flag === 1)]];
   for (const [k, ic, n] of rows) sec1.append(el('button', { class: 'lrow' + (S.source.kind === k ? ' on' : ''), onclick: () => setSource({ kind: k }), html: icon(ic, 18) + `<span>${SOURCES[k]}</span><span class="cnt">${n}</span>` }));
@@ -3191,7 +3215,7 @@ function renderGrid() {
   $('#gridHead').replaceChildren(el('span', { html: icon(S.source.kind === 'album' ? 'album' : 'photos', 18) }), el('span', { class: 't' }, sourceTitle()), el('span', { class: 'c' }, `${S.sel.size > 1 ? S.sel.size + ' ausgewählt · ' : ''}${vis.length} von ${S.photos.filter(inSource).length} Fotos${vis.length !== S.photos.filter(inSource).length ? ' (gefiltert)' : ''}`));
   if (!vis.length) {
     G.append(el('div', { class: 'empty' }, el('b', {}, S.photos.length ? 'Keine Fotos gefunden' : 'Noch keine Fotos'), el('div', {}, S.photos.length ? 'Passe Suche oder Filter an.' : 'Füge Fotos hinzu oder ziehe sie in dieses Fenster.'),
-      el('div', { style: 'display:flex;gap:8px;justify-content:center' }, S.photos.length ? el('button', { class: 'gbtn', onclick: resetFilters }, 'Filter zurücksetzen') : el('button', { class: 'gbtn blue', onclick: () => $('#fileInput').click() }, 'Fotos hinzufügen'), !S.photos.some(p => p.sample) ? el('button', { class: 'gbtn', onclick: reloadSamples }, 'Beispielfotos laden') : null)));
+      el('div', { style: 'display:flex;gap:8px;justify-content:center' }, S.photos.length ? el('button', { class: 'gbtn', onclick: resetFilters }, 'Filter zurücksetzen') : el('label', { class: 'gbtn blue', for: 'fileInput', role: 'button' }, 'Fotos hinzufügen'), !S.photos.some(p => p.sample) ? el('button', { class: 'gbtn', onclick: reloadSamples }, 'Beispielfotos laden') : null)));
     return;
   }
   const W = G.clientWidth - 4;
@@ -3460,7 +3484,7 @@ function updateMobileSections() {
 
 /* ---------- Dialoge ---------- */
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms); }
 function progress(text, f) { const p = $('#progress'); if (!text) { p.hidden = true; return; } p.hidden = false; $('#progressText').textContent = text; $('#progressBar').style.width = Math.round((f || 0) * 100) + '%'; }
 function modal(title, body, buttons) {
   if (S.modal) S.modal.close(); closeMenu();
@@ -3552,7 +3576,7 @@ function gridStep(dir) {
 /* ---------- Verdrahtung ---------- */
 function wire() {
   $('#tSidebar').innerHTML = icon('sidebar', 20); $('#tFilter').innerHTML = icon('filter', 18); $('#tUndo').innerHTML = icon('undo', 19); $('#tRedo').innerHTML = icon('redo', 19); $('#tShare').innerHTML = icon('share', 19); $('#tHelp').innerHTML = icon('help', 19); $('#tCloud').innerHTML = icon('cloud', 20); $('#searchIc').innerHTML = icon('search', 16); $('#searchClear').innerHTML = icon('close', 14);
-  $('#tBack').innerHTML = icon('chevLeft', 22); $('#tInfoM').innerHTML = icon('info', 20); $('#tMore').innerHTML = icon('more', 20);
+  $('#tBack').innerHTML = icon('chevLeft', 22); $('#tAddM').innerHTML = icon('plus', 20); $('#tInfoM').innerHTML = icon('info', 20); $('#tMore').innerHTML = icon('more', 20);
   $('#tSidebar').onclick = () => { const a = $('#app'); if (innerWidth <= 980) a.classList.toggle('show-left'); else a.classList.toggle('no-left'); requestRender(); setTimeout(() => S.view !== 'detail' && renderGrid(), 50); };
   $('#tBack').onclick = () => S.view === 'detail' ? setView('grid') : $('#app').classList.toggle('show-left');
   $('#tInfoM').onclick = () => setPanel('info');
@@ -3561,7 +3585,7 @@ function wire() {
   $('#tFilter').onclick = e => filterMenu(e.currentTarget);
   const si = $('#search'); si.addEventListener('input', () => { S.filter.text = si.value; if (S.view === 'detail' && si.value) setView('grid'); refreshAll(); }); si.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') { si.value = ''; S.filter.text = ''; refreshAll(); si.blur(); } });
   $('#searchClear').onclick = e => { e.preventDefault(); resetFilters(); };
-  $('#fileInput').addEventListener('change', e => { importFiles(e.target.files, S.source.kind === 'album' ? S.source.id : null); e.target.value = ''; });
+  $('#fileInput').addEventListener('change', e => { const files = [...(e.target.files || [])]; e.target.value = ''; if (files.length) importFiles(files, S.source.kind === 'album' ? S.source.id : null); });
   $('#mSheetDone').onclick = () => { if (S.mSection && S.mSection !== 'light') { S.mSection = 'light'; renderPanel(); } else { $('#app').classList.add('sheet-closed'); requestRender(); } };
   let depth = 0; const files = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
   window.addEventListener('dragenter', e => { if (!files(e)) return; e.preventDefault(); depth++; $('#drop').hidden = false; });

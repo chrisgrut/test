@@ -75,7 +75,7 @@ function updateMobileSections() {
 
 /* ---------- Dialoge ---------- */
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms); }
 function progress(text, f) { const p = $('#progress'); if (!text) { p.hidden = true; return; } p.hidden = false; $('#progressText').textContent = text; $('#progressBar').style.width = Math.round((f || 0) * 100) + '%'; }
 function modal(title, body, buttons) {
   if (S.modal) S.modal.close(); closeMenu();
@@ -167,7 +167,7 @@ function gridStep(dir) {
 /* ---------- Verdrahtung ---------- */
 function wire() {
   $('#tSidebar').innerHTML = icon('sidebar', 20); $('#tFilter').innerHTML = icon('filter', 18); $('#tUndo').innerHTML = icon('undo', 19); $('#tRedo').innerHTML = icon('redo', 19); $('#tShare').innerHTML = icon('share', 19); $('#tHelp').innerHTML = icon('help', 19); $('#tCloud').innerHTML = icon('cloud', 20); $('#searchIc').innerHTML = icon('search', 16); $('#searchClear').innerHTML = icon('close', 14);
-  $('#tBack').innerHTML = icon('chevLeft', 22); $('#tInfoM').innerHTML = icon('info', 20); $('#tMore').innerHTML = icon('more', 20);
+  $('#tBack').innerHTML = icon('chevLeft', 22); $('#tAddM').innerHTML = icon('plus', 20); $('#tInfoM').innerHTML = icon('info', 20); $('#tMore').innerHTML = icon('more', 20);
   $('#tSidebar').onclick = () => { const a = $('#app'); if (innerWidth <= 980) a.classList.toggle('show-left'); else a.classList.toggle('no-left'); requestRender(); setTimeout(() => S.view !== 'detail' && renderGrid(), 50); };
   $('#tBack').onclick = () => S.view === 'detail' ? setView('grid') : $('#app').classList.toggle('show-left');
   $('#tInfoM').onclick = () => setPanel('info');
@@ -176,7 +176,7 @@ function wire() {
   $('#tFilter').onclick = e => filterMenu(e.currentTarget);
   const si = $('#search'); si.addEventListener('input', () => { S.filter.text = si.value; if (S.view === 'detail' && si.value) setView('grid'); refreshAll(); }); si.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') { si.value = ''; S.filter.text = ''; refreshAll(); si.blur(); } });
   $('#searchClear').onclick = e => { e.preventDefault(); resetFilters(); };
-  $('#fileInput').addEventListener('change', e => { importFiles(e.target.files, S.source.kind === 'album' ? S.source.id : null); e.target.value = ''; });
+  $('#fileInput').addEventListener('change', e => { const files = [...(e.target.files || [])]; e.target.value = ''; if (files.length) importFiles(files, S.source.kind === 'album' ? S.source.id : null); });
   $('#mSheetDone').onclick = () => { if (S.mSection && S.mSection !== 'light') { S.mSection = 'light'; renderPanel(); } else { $('#app').classList.add('sheet-closed'); requestRender(); } };
   let depth = 0; const files = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
   window.addEventListener('dragenter', e => { if (!files(e)) return; e.preventDefault(); depth++; $('#drop').hidden = false; });
